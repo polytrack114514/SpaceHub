@@ -1,10 +1,8 @@
 -- ============================================
--- SpaceHub Supabase 数据库初始化（安全版本 v2）
+-- SpaceHub Supabase 数据库初始化（安全版本 v3）
 -- 在 Supabase SQL Editor 中运行此脚本
--- 修复：移除 password 字段、启用 RLS 策略
 -- ============================================
 
--- 帖子表
 CREATE TABLE IF NOT EXISTS posts (
     id TEXT PRIMARY KEY,
     title TEXT DEFAULT '',
@@ -20,7 +18,6 @@ CREATE TABLE IF NOT EXISTS posts (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 用户表（不含 password！密码哈希存储在后端 Edge Function）
 CREATE TABLE IF NOT EXISTS user_profiles (
     id SERIAL PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
@@ -31,7 +28,6 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     follows JSONB DEFAULT '[]'::jsonb
 );
 
--- 火箭发射表
 CREATE TABLE IF NOT EXISTS launches (
     id SERIAL PRIMARY KEY,
     rocket TEXT DEFAULT '',
@@ -46,7 +42,6 @@ CREATE TABLE IF NOT EXISTS launches (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 通知表
 CREATE TABLE IF NOT EXISTS notifications (
     id SERIAL PRIMARY KEY,
     target_user TEXT NOT NULL,
@@ -58,7 +53,6 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at BIGINT DEFAULT 0
 );
 
--- 私信表
 CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     from_user TEXT NOT NULL,
@@ -68,82 +62,52 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at BIGINT DEFAULT 0
 );
 
--- ============================================
--- 安全修复：启用 Row Level Security + 撤销 anon 对敏感表的权限
--- ============================================
-
--- 用户表（最敏感）- 完全封锁 anon 直接访问
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE launches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
 REVOKE ALL ON TABLE user_profiles FROM anon;
 REVOKE ALL ON TABLE user_profiles FROM public;
--- 仅允许读取公开字段
-CREATE POLICY "profiles_public_read" ON user_profiles
-    FOR SELECT TO anon, authenticated
-    USING (true);
--- 仅允许修改自己的资料
-CREATE POLICY "profiles_update_own" ON user_profiles
-    FOR UPDATE TO authenticated
-    USING (auth.uid()::text = name)
-    WITH CHECK (auth.uid()::text = name);
--- 禁止直接 INSERT（通过 Edge Function 注册）
-CREATE POLICY "profiles_insert_via_edge" ON user_profiles
-    FOR INSERT TO authenticated
-    WITH CHECK (false);  -- 前端不允许直接插入
+GRANT SELECT ON TABLE user_profiles TO anon, authenticated;
+DROP POLICY IF EXISTS "profiles_public_read" ON user_profiles;
+CREATE POLICY "profiles_public_read" ON user_profiles FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "profiles_update_own" ON user_profiles;
+CREATE POLICY "profiles_update_own" ON user_profiles FOR UPDATE TO authenticated USING (auth.uid()::text = name) WITH CHECK (auth.uid()::text = name);
+DROP POLICY IF EXISTS "profiles_insert_via_edge" ON user_profiles;
+CREATE POLICY "profiles_insert_via_edge" ON user_profiles FOR INSERT TO authenticated WITH CHECK (false);
 
--- 帖子表 - 允许匿名读取，仅认证用户可写
-ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE posts FROM anon;
 GRANT SELECT ON TABLE posts TO anon, authenticated;
-CREATE POLICY "posts_public_read" ON posts
-    FOR SELECT TO anon, authenticated
-    USING (true);
-CREATE POLICY "posts_insert" ON posts
-    FOR INSERT TO authenticated
-    WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "posts_update" ON posts
-    FOR UPDATE TO authenticated
-    USING (auth.role() = 'authenticated');
-CREATE POLICY "posts_delete" ON posts
-    FOR DELETE TO authenticated
-    USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "posts_public_read" ON posts;
+CREATE POLICY "posts_public_read" ON posts FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "posts_insert" ON posts;
+CREATE POLICY "posts_insert" ON posts FOR INSERT TO authenticated WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "posts_update" ON posts;
+CREATE POLICY "posts_update" ON posts FOR UPDATE TO authenticated USING (auth.uid()::text = author) WITH CHECK (auth.uid()::text = author);
+DROP POLICY IF EXISTS "posts_delete" ON posts;
+CREATE POLICY "posts_delete" ON posts FOR DELETE TO authenticated USING (auth.uid()::text = author);
 
--- 火箭发射表 - 允许匿名读取
-ALTER TABLE launches ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE launches FROM anon;
 GRANT SELECT ON TABLE launches TO anon, authenticated;
-CREATE POLICY "launches_public_read" ON launches
-    FOR SELECT TO anon, authenticated
-    USING (true);
-CREATE POLICY "launches_admin_write" ON launches
-    FOR ALL TO authenticated
-    USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "launches_public_read" ON launches;
+CREATE POLICY "launches_public_read" ON launches FOR SELECT TO anon, authenticated USING (true);
+DROP POLICY IF EXISTS "launches_admin_write" ON launches;
+CREATE POLICY "launches_admin_write" ON launches FOR ALL TO authenticated USING (auth.jwt() ->> 'role' = 'admin') WITH CHECK (auth.jwt() ->> 'role' = 'admin');
 
--- 通知表 - 仅认证用户可访问
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE notifications FROM anon;
-CREATE POLICY "notifications_select" ON notifications
-    FOR SELECT TO authenticated
-    USING (true);
-CREATE POLICY "notifications_insert" ON notifications
-    FOR INSERT TO authenticated
-    WITH CHECK (auth.role() = 'authenticated');
+GRANT SELECT, INSERT ON TABLE notifications TO authenticated;
+DROP POLICY IF EXISTS "notifications_select" ON notifications;
+CREATE POLICY "notifications_select" ON notifications FOR SELECT TO authenticated USING (auth.uid()::text = target_user OR auth.uid()::text = from_user);
+DROP POLICY IF EXISTS "notifications_insert" ON notifications;
+CREATE POLICY "notifications_insert" ON notifications FOR INSERT TO authenticated WITH CHECK (auth.uid()::text = from_user);
 
--- 私信表 - 仅认证用户可访问
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE messages FROM anon;
-CREATE POLICY "messages_select" ON messages
-    FOR SELECT TO authenticated
-    USING (auth.uid()::text = from_user OR auth.uid()::text = to_user);
-CREATE POLICY "messages_insert" ON messages
-    FOR INSERT TO authenticated
-    WITH CHECK (auth.role() = 'authenticated');
+GRANT SELECT, INSERT ON TABLE messages TO authenticated;
+DROP POLICY IF EXISTS "messages_select" ON messages;
+CREATE POLICY "messages_select" ON messages FOR SELECT TO authenticated USING (auth.uid()::text = from_user OR auth.uid()::text = to_user);
+DROP POLICY IF EXISTS "messages_insert" ON messages;
+CREATE POLICY "messages_insert" ON messages FOR INSERT TO authenticated WITH CHECK (auth.uid()::text = from_user);
 
--- ============================================
--- 增量更新兼容（如果旧表 users 已存在）
--- ============================================
--- 将旧 users 表的 password 列设为 NULL 并隐藏
--- 注意：需要在 Supabase Dashboard 手动执行以下迁移
--- ALTER TABLE users DROP COLUMN IF EXISTS password;
--- 或者重命名旧表保留数据：
--- ALTER TABLE users RENAME TO users_legacy;
--- CREATE TABLE user_profiles (...); -- 上面已定义
+-- 旧 users 表迁移请按实际部署情况手动执行。
