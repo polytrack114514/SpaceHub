@@ -120,9 +120,50 @@
     }
     .hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 6px; }
 
-    .cf-wrap { margin: 20px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-    .cf-note { display: none; font-size: 0.76rem; color: var(--text-muted); text-align: center; }
-    .cf-note.show { display: block; }
+    /* 滑块人机验证（纯前端，无需密钥 / 服务端） */
+    .slider-wrap { margin: 20px 0 6px; }
+    .slider-track {
+        position: relative;
+        height: 50px;
+        border-radius: 13px;
+        background: var(--lg-sheen), rgba(10, 10, 12, 0.6);
+        border: 1px solid var(--lg-edge);
+        box-shadow: var(--lg-inset);
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+    }
+    .slider-fill {
+        position: absolute; top: 0; bottom: 0; left: 0; width: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.20));
+        transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .slider-text {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.85rem; letter-spacing: 0.03em;
+        color: var(--text-secondary);
+        pointer-events: none;
+        transition: color 0.2s;
+    }
+    .slider-handle {
+        position: absolute; top: 5px; left: 5px;
+        width: 40px; height: 40px; border-radius: 11px;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
+        border: 1px solid var(--lg-edge-hover);
+        box-shadow: var(--lg-inset), 0 4px 16px rgba(0, 0, 0, 0.45);
+        color: #fff; cursor: grab;
+        transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        will-change: left;
+    }
+    .slider-handle:active { cursor: grabbing; }
+    .slider-handle svg { width: 18px; height: 18px; display: block; }
+    .slider-track.verified { border-color: rgba(255, 255, 255, 0.5); }
+    .slider-track.verified .slider-text { color: var(--text-primary); }
+    .slider-track.verified .slider-fill { background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.30)); }
+    .slider-track.verified .slider-handle { border-color: #fff; }
 
     .submit {
         width: 100%;
@@ -184,18 +225,15 @@
                 <input type="password" id="confirm" placeholder="再输入一次密码" autocomplete="new-password">
             </div>
 
-            <div class="cf-wrap">
-                <!-- Cloudflare Turnstile 人机验证
-                     注意：下面的 data-sitekey 目前用的是 Cloudflare 官方「始终放行」测试 key。
-                     上线前请到 Cloudflare 控制台新建 Turnstile 站点，替换为你自己的真实 site key。 -->
-                <div class="cf-turnstile" id="cfWidget"
-                     data-sitekey="1x00000000000000000000AA"
-                     data-theme="dark"
-                     data-language="zh-cn"
-                     data-callback="onTurnstileSuccess"
-                     data-expired-callback="onTurnstileExpired"
-                     data-error-callback="onTurnstileError"></div>
-                <div class="cf-note" id="cfNote">正在加载人机验证…</div>
+            <div class="slider-wrap">
+                <!-- 纯前端滑块人机验证：无需密钥、无需服务端，国内可正常加载 -->
+                <div class="slider-track" id="sliderTrack">
+                    <div class="slider-fill" id="sliderFill"></div>
+                    <div class="slider-text" id="sliderText">按住滑块，拖动到最右端</div>
+                    <div class="slider-handle" id="sliderHandle" aria-label="拖动滑块完成验证">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+                    </div>
+                </div>
             </div>
 
             <button type="button" class="submit" id="submitBtn" onclick="doSignup()">注册</button>
@@ -208,7 +246,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>if (typeof supabase === 'undefined') { document.write('<' + 'script src="https://unpkg.com/@supabase/supabase-js@2"><' + '/script>'); }</script>
 <script>if (typeof supabase === 'undefined') { document.write('<' + 'script src="https://cdn.bootcdn.net/ajax/libs/supabase/2.76.1/supabase.min.js"><' + '/script>'); }</script>
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
 // ==================== Supabase 配置（与首页一致） ====================
 var SUPABASE_URL = 'https://tktfrrvaqwbtdhiqwnna.supabase.co';
@@ -223,8 +260,9 @@ try {
     console.error('[sign-up] Supabase 初始化失败:', e);
 }
 
-var turnstileToken = '';
+var sliderVerified = false;
 var submitting = false;
+var resetSlider = function () {};   // 由滑块组件初始化后覆盖
 
 function byId(id) { return document.getElementById(id); }
 function showErr(msg) {
@@ -236,25 +274,72 @@ function showOk(msg) {
     byId('errBox').classList.remove('show');
 }
 
-// ==================== Cloudflare Turnstile 回调 ====================
-function onTurnstileSuccess(token) {
-    turnstileToken = token;
-    byId('cfNote').classList.remove('show');
-}
-function onTurnstileExpired() { turnstileToken = ''; byId('cfNote').textContent = '人机验证已过期，请重新验证'; byId('cfNote').classList.add('show'); }
-function onTurnstileError()   { turnstileToken = ''; byId('cfNote').textContent = '人机验证加载失败，请检查网络后刷新页面重试'; byId('cfNote').classList.add('show'); }
+// ==================== 滑块人机验证（纯前端） ====================
+var ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 
-// Turnstile 脚本加载超时兜底提示
-window.addEventListener('load', function () {
-    setTimeout(function () {
-        if (!window.turnstile) {
-            byId('cfNote').textContent = '人机验证加载失败（可能网络受限），请刷新页面重试';
-            byId('cfNote').classList.add('show');
-        } else {
-            byId('cfNote').classList.remove('show');
-        }
-    }, 10000);
-});
+(function initSlider() {
+    var track = byId('sliderTrack');
+    var handle = byId('sliderHandle');
+    var fill = byId('sliderFill');
+    var text = byId('sliderText');
+    if (!track || !handle || !fill || !text) return;
+
+    var dragging = false, startX = 0, curX = 0;
+
+    function maxX() { return Math.max(0, track.clientWidth - handle.offsetWidth - 10); }
+    function render(x) {
+        curX = Math.max(0, Math.min(x, maxX()));
+        handle.style.left = (5 + curX) + 'px';
+        fill.style.width = (5 + curX + handle.offsetWidth) + 'px';
+    }
+    function complete() {
+        sliderVerified = true;
+        track.classList.add('verified');
+        handle.innerHTML = CHECK_SVG;
+        text.textContent = '验证通过';
+        render(maxX());
+    }
+    function reset() {
+        sliderVerified = false;
+        track.classList.remove('verified');
+        handle.innerHTML = ARROW_SVG;
+        text.textContent = '按住滑块，拖动到最右端';
+        render(0);
+    }
+    resetSlider = reset;
+
+    function pointX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+    function onDown(e) {
+        if (sliderVerified) return;
+        dragging = true;
+        startX = pointX(e) - curX;
+        handle.style.transition = 'none';
+        fill.style.transition = 'none';
+    }
+    function onMove(e) {
+        if (!dragging) return;
+        render(pointX(e) - startX);
+        if (e.cancelable) e.preventDefault();
+    }
+    function onUp() {
+        if (!dragging) return;
+        dragging = false;
+        handle.style.transition = '';
+        fill.style.transition = '';
+        if (curX >= maxX() - 2) complete(); else render(0);
+    }
+
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('touchstart', onDown, { passive: true });
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchend', onUp);
+    window.addEventListener('resize', function () { render(sliderVerified ? maxX() : 0); });
+
+    reset();
+})();
 
 // ==================== 注册是否被管理员关闭 ====================
 async function isRegisterDisabled() {
@@ -286,7 +371,7 @@ async function doSignup() {
     if (name.length > 20) return showErr('用户名最多 20 个字符');
     if (!pwd || pwd.length < 6) return showErr('密码至少 6 位');
     if (pwd !== confirm) return showErr('两次密码不一致');
-    if (!turnstileToken) return showErr('请先完成人机验证');
+    if (!sliderVerified) return showErr('请先拖动滑块完成验证');
 
     if (!sb) return showErr('服务未就绪，请刷新页面重试');
 
@@ -297,7 +382,7 @@ async function doSignup() {
     try {
         if (await isRegisterDisabled()) {
             showErr('注册已关闭，请联系管理员');
-            resetTurnstile();
+            resetSlider();
             submitting = false; btn.disabled = false; btn.textContent = '注册';
             return;
         }
@@ -318,16 +403,11 @@ async function doSignup() {
         startCountdown();
     } catch (e) {
         showErr(e.message || '注册失败，请稍后重试');
-        resetTurnstile();
+        resetSlider();
         submitting = false;
         btn.disabled = false;
         btn.textContent = '注册';
     }
-}
-
-function resetTurnstile() {
-    turnstileToken = '';
-    try { if (window.turnstile) turnstile.reset(); } catch (e) {}
 }
 
 function startCountdown() {
