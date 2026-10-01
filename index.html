@@ -75,7 +75,27 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: #000000;
+            background-color: #000000;
+            /* 极暗星野 + 微星云：极低亮度铺陈，保持纯黑极简气质，同时给玻璃留出可折射的光尘 */
+            background-image:
+                radial-gradient(1.6px 1.6px at 31px 47px,   rgba(255, 255, 255, 0.52) 0%, transparent 100%),
+                radial-gradient(1.2px 1.2px at 149px 193px, rgba(255, 255, 255, 0.38) 0%, transparent 100%),
+                radial-gradient(1.0px 1.0px at 233px 89px,  rgba(255, 255, 255, 0.30) 0%, transparent 100%),
+                radial-gradient(1.4px 1.4px at 91px 262px,  rgba(255, 255, 255, 0.40) 0%, transparent 100%),
+                radial-gradient(1.0px 1.0px at 301px 331px, rgba(255, 255, 255, 0.26) 0%, transparent 100%),
+                radial-gradient(62% 46% at 16% 8%,   rgba(96, 126, 205, 0.10) 0%, transparent 62%),
+                radial-gradient(56% 44% at 86% 84%,  rgba(132, 98, 196, 0.075) 0%, transparent 64%),
+                radial-gradient(78% 58% at 52% 116%, rgba(64, 96, 160, 0.06) 0%, transparent 66%);
+            background-size:
+                337px 337px,
+                419px 419px,
+                271px 271px,
+                461px 461px,
+                383px 383px,
+                100% 100%,
+                100% 100%,
+                100% 100%;
+            background-repeat: repeat, repeat, repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
             z-index: 0;
         }
         .bg-overlay {
@@ -2347,13 +2367,13 @@ body::before {
     100% { transform: translateY(4px); }
 }
 
-/* --- 全息网格背景 --- */
+/* --- 全息网格背景（减弱压暗，让极暗星野透过；网格改为灰阶） --- */
 .bg-overlay {
-    background: rgba(4, 8, 20, 0.55) !important;
+    background: rgba(6, 8, 14, 0.32) !important;
     background-image:
-        linear-gradient(rgba(91, 143, 255, 0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(91, 143, 255, 0.025) 1px, transparent 1px) !important;
-    background-size: 50px 50px !important;
+        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px) !important;
+    background-size: 64px 64px !important;
 }
 
 /* --- 标题霓虹发光 --- */
@@ -4430,6 +4450,72 @@ hr, .divider {
             }
             /* 移动端关闭流动扫光，减少合成层开销 */
             .post-card::after, .launch-card::after { animation: none !important; display: none !important; }
+        }
+
+        /* ==================== 液态玻璃 · 交互增强 (鼠标跟随高光 + 3D 视差) ==================== */
+        /* 仅在精确指针设备生效；触屏/降低动效偏好由下方媒体查询与 JS 双重禁用 */
+        :root {
+            --hl-x: 50%;       /* 高光横坐标 */
+            --hl-y: 0%;        /* 高光纵坐标 */
+            --tilt-x: 0deg;    /* 俯仰 */
+            --tilt-y: 0deg;    /* 偏航 */
+            --tilt-lift: 0px;  /* 悬停上浮 */
+        }
+
+        /* 玻璃面板：以指针为轴心的 3D 倾斜 + 上浮 */
+        .post-card, .launch-card, .apod-container {
+            transform: perspective(1100px)
+                       rotateX(var(--tilt-x))
+                       rotateY(var(--tilt-y))
+                       translateY(var(--tilt-lift));
+            transform-origin: center center;
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        .apod-container { position: relative; }
+        /* 悬停：上浮 + 倾斜。必须用 (0,2,0)+!important 并置于所有既有 :hover 规则之后，
+           否则会被既有 .post-card:hover/.launch-card:hover 的 translateY(...) !important 覆盖掉倾斜 */
+        .post-card:hover, .launch-card:hover, .apod-container:hover {
+            --tilt-lift: -4px;
+            transform: perspective(1100px)
+                       rotateX(var(--tilt-x))
+                       rotateY(var(--tilt-y))
+                       translateY(var(--tilt-lift)) !important;
+        }
+
+        /* 镜面高光：跟随指针的柔光，与原有顶部高光线合并到同一伪元素
+           (z-index:-1 使其位于玻璃底色之上、文字内容之下) */
+        .post-card::before,
+        .launch-card::before,
+        .apod-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            height: auto;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: -1;
+            background:
+                radial-gradient(300px circle at var(--hl-x) var(--hl-y),
+                    rgba(255, 255, 255, 0.16) 0%,
+                    rgba(255, 255, 255, 0.06) 32%,
+                    rgba(255, 255, 255, 0) 62%),
+                linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent) top left / 100% 1px no-repeat !important;
+            opacity: 0;
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .post-card:hover::before,
+        .launch-card:hover::before,
+        .apod-container:hover::before { opacity: 1; }
+
+        /* 触屏 / 粗指针：完全关闭倾斜与跟随高光，仅保留顶部高光线 */
+        @media (hover: none), (pointer: coarse) {
+            .post-card, .launch-card, .apod-container { transform: none !important; }
+            .post-card::before, .launch-card::before, .apod-container::before {
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent) top left / 100% 1px no-repeat !important;
+            }
         }
 
 </style>
@@ -6744,7 +6830,7 @@ function extractMentions(text) {
             }
             s.twinkle += 0.02;
             var tw = Math.sin(s.twinkle) * 0.3 + 0.7;
-            ctx.fillStyle = 'rgba(91, 143, 255, ' + (s.opacity * tw) + ')';
+            ctx.fillStyle = 'rgba(255, 255, 255, ' + (s.opacity * tw) + ')';
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
             ctx.fill();
@@ -6752,6 +6838,60 @@ function extractMentions(text) {
         requestAnimationFrame(draw);
     }
     draw();
+})();
+
+// ==================== 液态玻璃 · 鼠标跟随高光 + 3D 视差 ====================
+(function() {
+    var mqFine = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)') : null;
+    var mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    if (!mqFine || !mqFine.matches || (mqReduce && mqReduce.matches)) return;
+
+    var SEL = '.post-card, .launch-card, .apod-container';
+    var MAX = 5; // 最大倾斜角度(deg)
+    var current = null;
+    var pendingEvent = null;
+    var rafId = 0;
+
+    function reset(el) {
+        el.style.setProperty('--tilt-x', '0deg');
+        el.style.setProperty('--tilt-y', '0deg');
+        el.style.setProperty('--hl-x', '50%');
+        el.style.setProperty('--hl-y', '0%');
+    }
+    function apply(el, e) {
+        var r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        var px = (e.clientX - r.left) / r.width;   // 0..1
+        var py = (e.clientY - r.top) / r.height;   // 0..1
+        el.style.setProperty('--hl-x', (px * 100).toFixed(1) + '%');
+        el.style.setProperty('--hl-y', (py * 100).toFixed(1) + '%');
+        el.style.setProperty('--tilt-y', ((px - 0.5) * 2 * MAX).toFixed(2) + 'deg');
+        el.style.setProperty('--tilt-x', ((0.5 - py) * 2 * MAX).toFixed(2) + 'deg');
+    }
+    function clearCurrent() {
+        if (current) { reset(current); current = null; }
+    }
+
+    // 事件委托 + rAF 节流：动态渲染的卡片无需逐个绑定，每帧最多更新一次
+    document.addEventListener('pointermove', function(e) {
+        pendingEvent = e;
+        if (rafId) return;
+        rafId = requestAnimationFrame(function() {
+            rafId = 0;
+            var ev = pendingEvent;
+            if (!ev || !ev.target || !ev.target.closest) return;
+            var el = ev.target.closest(SEL);
+            if (el !== current) {
+                if (current) reset(current);
+                current = el;
+            }
+            if (el) apply(el, ev);
+        });
+    }, { passive: true });
+
+    document.addEventListener('pointerleave', clearCurrent);
+    document.documentElement.addEventListener('mouseleave', clearCurrent);
+    window.addEventListener('blur', clearCurrent);
 })();
 
 // ==================== NASA 每日天文一图 ====================
