@@ -4265,48 +4265,89 @@ hr, .divider {
             outline-offset: 2px;
         }
 
-        /* ==================== 液态玻璃 Liquid Glass ==================== */
-        /* 精致内敛：毛玻璃 + 高光描边 + 斜向反光层，保持深色主题可读性 */
+        /* ==================== 液态玻璃 · 科幻版 (Liquid Glass Sci-Fi) ==================== */
+        /* 星舰全息玻璃：通透毛玻璃 + 霓虹冷光描边 + 全息虹彩镀膜 + 流动扫光 */
         :root {
-            --lg-tint:        rgba(16, 22, 42, 0.66);
-            --lg-tint-hover:  rgba(22, 30, 54, 0.76);
-            --lg-tint-soft:   rgba(14, 19, 36, 0.58);
-            --lg-tint-strong: rgba(11, 16, 30, 0.84);
-            --lg-edge:        rgba(255, 255, 255, 0.10);
-            --lg-edge-hover:  rgba(255, 255, 255, 0.20);
-            --lg-blur:        blur(16px) saturate(160%);
-            --lg-blur-sm:     blur(14px) saturate(150%);
-            --lg-blur-lg:     blur(28px) saturate(180%);
-            /* 玻璃斜向反光层 */
-            --lg-sheen: linear-gradient(135deg,
-                rgba(255, 255, 255, 0.10) 0%,
-                rgba(255, 255, 255, 0.03) 24%,
+            --lg-tint:        rgba(9, 15, 33, 0.60);
+            --lg-tint-hover:  rgba(12, 20, 44, 0.68);
+            --lg-tint-soft:   rgba(9, 15, 33, 0.54);
+            --lg-tint-strong: rgba(7, 11, 25, 0.80);
+            /* 霓虹冷光 */
+            --lg-neon:       rgba(0, 232, 255, 0.9);
+            --lg-neon-2:     rgba(181, 88, 255, 0.9);
+            --lg-edge:       rgba(0, 232, 255, 0.26);
+            --lg-edge-hover: rgba(0, 232, 255, 0.62);
+            --lg-blur:    blur(18px) saturate(180%);
+            --lg-blur-sm: blur(16px) saturate(170%);
+            --lg-blur-lg: blur(30px) saturate(195%);
+            /* 顶部镜面高光 */
+            --lg-sheen: radial-gradient(130% 100% at 14% -10%,
+                rgba(255, 255, 255, 0.16) 0%,
+                rgba(255, 255, 255, 0.03) 38%,
+                rgba(255, 255, 255, 0) 62%);
+            /* 全息虹彩镀膜 */
+            --lg-iris: linear-gradient(135deg,
+                rgba(0, 232, 255, 0.11) 0%,
+                rgba(91, 143, 255, 0.03) 28%,
                 rgba(255, 255, 255, 0) 50%,
-                rgba(255, 255, 255, 0.015) 74%,
-                rgba(255, 255, 255, 0.055) 100%);
-            /* 内描边高光 */
-            --lg-inset: inset 0 1px 0 rgba(255, 255, 255, 0.16),
-                        inset 0 -1px 0 rgba(255, 255, 255, 0.03),
-                        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-            --lg-shadow: 0 12px 38px rgba(0, 0, 0, 0.48), 0 2px 10px rgba(0, 0, 0, 0.34);
+                rgba(181, 88, 255, 0.05) 72%,
+                rgba(255, 61, 127, 0.11) 100%);
+            /* 内描边冷光 */
+            --lg-inset: inset 0 1px 0 rgba(255, 255, 255, 0.20),
+                        inset 0 0 0 1px rgba(0, 232, 255, 0.06),
+                        inset 0 -20px 34px -22px rgba(0, 232, 255, 0.28);
+            /* 外发光 */
+            --lg-glow: 0 0 0 1px rgba(0, 232, 255, 0.07),
+                       0 0 24px rgba(0, 232, 255, 0.10),
+                       0 0 64px rgba(91, 143, 255, 0.10),
+                       0 14px 44px rgba(0, 0, 0, 0.55);
+        }
+        /* 流动扫光 */
+        @keyframes lgSweep {
+            0%   { transform: translateX(-160%) skewX(-18deg); }
+            55%  { transform: translateX(420%) skewX(-18deg); }
+            100% { transform: translateX(420%) skewX(-18deg); }
         }
 
         /* --- 帖子卡片 --- */
         .post-card {
-            background: var(--lg-sheen), var(--lg-tint) !important;
+            background: var(--lg-sheen), var(--lg-iris), var(--lg-tint) !important;
             border: 1px solid var(--lg-edge) !important;
             backdrop-filter: var(--lg-blur) !important;
             -webkit-backdrop-filter: var(--lg-blur) !important;
-            box-shadow: var(--lg-inset), var(--lg-shadow) !important;
+            box-shadow: var(--lg-inset), var(--lg-glow) !important;
         }
         .post-card:hover {
-            background: var(--lg-sheen), var(--lg-tint-hover) !important;
+            background: var(--lg-sheen), var(--lg-iris), var(--lg-tint-hover) !important;
             border-color: var(--lg-edge-hover) !important;
             box-shadow: var(--lg-inset),
-                        0 0 0 1px rgba(91, 143, 255, 0.16),
-                        0 0 26px rgba(91, 143, 255, 0.12),
-                        0 16px 44px rgba(0, 0, 0, 0.55) !important;
+                        0 0 0 1px rgba(0, 232, 255, 0.28),
+                        0 0 30px rgba(0, 232, 255, 0.22),
+                        0 0 70px rgba(181, 88, 255, 0.18),
+                        0 18px 50px rgba(0, 0, 0, 0.6) !important;
+            transform: translateY(-3px) !important;
         }
+        .post-card::after, .launch-card::after {
+            content: '';
+            position: absolute;
+            top: -30%;
+            bottom: -30%;
+            left: 0;
+            width: 38%;
+            background: linear-gradient(100deg,
+                transparent 0%,
+                rgba(255, 255, 255, 0.10) 38%,
+                rgba(0, 232, 255, 0.22) 50%,
+                rgba(255, 255, 255, 0.10) 62%,
+                transparent 100%);
+            transform: translateX(-160%) skewX(-18deg);
+            pointer-events: none;
+            opacity: 1;
+            z-index: -1;
+            animation: lgSweep 7.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        .post-card:nth-child(2n)::after, .launch-card:nth-child(2n)::after { animation-delay: -2.5s; }
+        .post-card:nth-child(3n)::after, .launch-card:nth-child(3n)::after { animation-delay: -5s; }
 
         /* --- 顶部栏：搜索框 / 标签栏 --- */
         .search-box input,
@@ -4358,7 +4399,7 @@ hr, .divider {
             border: 1px solid var(--lg-edge) !important;
             backdrop-filter: var(--lg-blur) !important;
             -webkit-backdrop-filter: var(--lg-blur) !important;
-            box-shadow: var(--lg-inset), var(--lg-shadow) !important;
+            box-shadow: var(--lg-inset), var(--lg-glow) !important;
         }
         .apod-container:hover {
             background: var(--lg-sheen), var(--lg-tint-hover) !important;
@@ -4392,6 +4433,8 @@ hr, .divider {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
             }
+            /* 移动端关闭流动扫光，减少合成层开销 */
+            .post-card::after, .launch-card::after { animation: none !important; display: none !important; }
         }
 
 </style>
