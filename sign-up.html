@@ -120,6 +120,11 @@
     }
     .hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 6px; }
 
+    /* Cloudflare Turnstile 人机验证 */
+    .cf-wrap { margin: 18px 0 2px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 68px; }
+    .cf-note { display: none; font-size: 0.76rem; color: var(--text-muted); text-align: center; }
+    .cf-note.show { display: block; }
+
     .submit {
         width: 100%;
         margin-top: 14px;
@@ -180,6 +185,20 @@
                 <input type="password" id="confirm" placeholder="再输入一次密码" autocomplete="new-password">
             </div>
 
+            <!-- Cloudflare Turnstile 人机验证
+                 注意：下面的 data-sitekey 目前是 Cloudflare 官方「始终放行」测试 key，会显示“仅用于测试”。
+                 请到 Cloudflare 面板 → Turnstile 新建站点，把 site key 换成你自己的（Secret Key 不要放前端）。 -->
+            <div class="cf-wrap">
+                <div class="cf-turnstile"
+                     data-sitekey="1x00000000000000000000AA"
+                     data-theme="dark"
+                     data-language="zh-cn"
+                     data-callback="onTurnstileSuccess"
+                     data-expired-callback="onTurnstileExpired"
+                     data-error-callback="onTurnstileError"></div>
+                <div class="cf-note show" id="cfNote">正在加载人机验证…</div>
+            </div>
+
             <button type="button" class="submit" id="submitBtn" onclick="doSignup()">注册</button>
         </form>
 
@@ -190,6 +209,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>if (typeof supabase === 'undefined') { document.write('<' + 'script src="https://unpkg.com/@supabase/supabase-js@2"><' + '/script>'); }</script>
 <script>if (typeof supabase === 'undefined') { document.write('<' + 'script src="https://cdn.bootcdn.net/ajax/libs/supabase/2.76.1/supabase.min.js"><' + '/script>'); }</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
 // ==================== Supabase 配置（与首页一致） ====================
 var SUPABASE_URL = 'https://tktfrrvaqwbtdhiqwnna.supabase.co';
@@ -205,6 +225,7 @@ try {
 }
 
 var submitting = false;
+var turnstileToken = '';
 
 function byId(id) { return document.getElementById(id); }
 function showErr(msg) {
@@ -214,6 +235,40 @@ function showErr(msg) {
 function showOk(msg) {
     var el = byId('okBox'); el.textContent = msg; el.classList.add('show');
     byId('errBox').classList.remove('show');
+}
+
+// ==================== Cloudflare Turnstile 回调 ====================
+function onTurnstileSuccess(token) {
+    turnstileToken = token || '';
+    byId('cfNote').classList.remove('show');
+}
+function onTurnstileExpired() {
+    turnstileToken = '';
+    var n = byId('cfNote'); n.textContent = '人机验证已过期，请重新验证'; n.classList.add('show');
+}
+function onTurnstileError() {
+    turnstileToken = '';
+    var n = byId('cfNote'); n.textContent = '人机验证加载失败，请刷新页面重试'; n.classList.add('show');
+}
+
+// 验证脚本加载状态：加载成功即隐藏提示，超时未加载则给出提示
+window.addEventListener('load', function () {
+    var timer = setInterval(function () {
+        if (window.turnstile) { clearInterval(timer); byId('cfNote').classList.remove('show'); }
+    }, 300);
+    setTimeout(function () {
+        clearInterval(timer);
+        if (!window.turnstile) {
+            var n = byId('cfNote');
+            n.textContent = '人机验证加载失败（可能网络受限），请刷新页面重试';
+            n.classList.add('show');
+        }
+    }, 10000);
+});
+
+function resetTurnstile() {
+    turnstileToken = '';
+    try { if (window.turnstile) window.turnstile.reset(); } catch (e) {}
 }
 
 // ==================== 注册是否被管理员关闭 ====================
@@ -246,6 +301,7 @@ async function doSignup() {
     if (name.length > 20) return showErr('用户名最多 20 个字符');
     if (!pwd || pwd.length < 6) return showErr('密码至少 6 位');
     if (pwd !== confirm) return showErr('两次密码不一致');
+    if (!turnstileToken) return showErr('请先完成人机验证');
 
     if (!sb) return showErr('服务未就绪，请刷新页面重试');
 
@@ -256,6 +312,7 @@ async function doSignup() {
     try {
         if (await isRegisterDisabled()) {
             showErr('注册已关闭，请联系管理员');
+            resetTurnstile();
             submitting = false; btn.disabled = false; btn.textContent = '注册';
             return;
         }
@@ -276,6 +333,7 @@ async function doSignup() {
         startCountdown();
     } catch (e) {
         showErr(e.message || '注册失败，请稍后重试');
+        resetTurnstile();
         submitting = false;
         btn.disabled = false;
         btn.textContent = '注册';
