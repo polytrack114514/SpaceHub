@@ -6581,8 +6581,9 @@ function extractMentions(text) {
 })();
 
 // ==================== NASA 每日天文一图 ====================
-// NASA API Key - 免费申请：https://api.nasa.gov (替换 DEMO_KEY 可无限请求)
-var NASA_API_KEY = 'DEMO_KEY';
+// NASA API Key - 免费申请：https://api.nasa.gov
+// 注意：DEMO_KEY 为全局共享、限 30 次/小时，易触发 OVER_RATE_LIMIT，故使用专属 Key
+var NASA_API_KEY = 'llTHds3HslMGm93xpIjm0kt7NyJ1PFW1DZ8WMynt';
 // NASA 接口偶发 500 / 返回异常，带退避的自动重试
 async function nasaGetJSON(url, retries) {
     if (retries == null) retries = 4;
@@ -6629,20 +6630,22 @@ async function loadAPOD() {
         renderAPOD(data);
     } catch (e) {
         console.error('APOD error:', e);
-        // 尝试使用缓存数据
-        var today = new Date().toISOString().split('T')[0];
-        var cacheKey = 'apod_data_' + today;
-        var cached = localStorage.getItem(cacheKey);
-        if (cached) {
-            try {
-                var cachedData = JSON.parse(cached);
-                renderAPOD(cachedData);
-                var note = document.createElement('div');
-                note.style.cssText = 'text-align:center;padding:8px;color:var(--text-muted);font-size:0.8rem;';
-                note.textContent = '⚠️ 今日图片获取失败，显示缓存数据 (' + (cachedData.date||'') + ')';
-                container.appendChild(note);
-                return;
-            } catch(e2) {}
+        // 回退：优先今日缓存，其次最近 7 天内任意可用缓存
+        var cachedData = null;
+        for (var d = 0; d < 7; d++) {
+            var dd = new Date(); dd.setDate(dd.getDate() - d);
+            var key = 'apod_data_' + dd.toISOString().split('T')[0];
+            try { cachedData = JSON.parse(localStorage.getItem(key)); } catch(e2) {}
+            if (cachedData && cachedData.url) break;
+            cachedData = null;
+        }
+        if (cachedData) {
+            renderAPOD(cachedData);
+            var note = document.createElement('div');
+            note.style.cssText = 'text-align:center;padding:8px;color:var(--text-muted);font-size:0.8rem;';
+            note.textContent = '⚠️ 今日图片获取失败，显示缓存数据 (' + (cachedData.date||'') + ')';
+            container.appendChild(note);
+            return;
         }
         container.innerHTML = '<div class="apod-container"><div class="apod-loading" style="padding:30px;">⚠️ 每日天文一图暂时无法加载，请稍后刷新重试</div></div>';
     }
