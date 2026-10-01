@@ -6583,6 +6583,26 @@ function extractMentions(text) {
 // ==================== NASA 每日天文一图 ====================
 // NASA API Key - 免费申请：https://api.nasa.gov (替换 DEMO_KEY 可无限请求)
 var NASA_API_KEY = 'DEMO_KEY';
+// NASA 接口偶发 500 / 返回异常，带退避的自动重试
+async function nasaGetJSON(url, retries) {
+    if (retries == null) retries = 4;
+    var lastErr;
+    for (var i = 0; i < retries; i++) {
+        try {
+            var resp = await fetch(url);
+            if (resp.status === 429) throw new Error('RATE_LIMIT');
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            var data = await resp.json();
+            if (!data || data.code || data.error) throw new Error('Bad payload');
+            return data;
+        } catch (e) {
+            lastErr = e;
+            if (e && e.message === 'RATE_LIMIT') throw e;
+            if (i < retries - 1) await new Promise(function(r) { setTimeout(r, 700 * (i + 1)); });
+        }
+    }
+    throw lastErr;
+}
 async function loadAPOD() {
     var container = document.getElementById('apodContainer');
     if (!container) return;
@@ -6603,12 +6623,7 @@ async function loadAPOD() {
             }
         }
         container.innerHTML = '<div class="apod-container"><div class="apod-loading">📡 正在获取今日天文图片...</div></div>';
-        var resp = await fetch('https://api.nasa.gov/planetary/apod?api_key=' + NASA_API_KEY);
-        if (!resp.ok) {
-            if (resp.status === 429) throw new Error('RATE_LIMIT');
-            throw new Error('APOD fetch failed: ' + resp.status);
-        }
-        var data = await resp.json();
+        var data = await nasaGetJSON('https://api.nasa.gov/planetary/apod?api_key=' + NASA_API_KEY);
         localStorage.setItem(cacheKey, JSON.stringify(data));
         localStorage.setItem(timeKey, String(Date.now()));
         renderAPOD(data);
@@ -7182,19 +7197,15 @@ async function loadAsteroids() {
         return;
     }
     try {
-        var resp = await fetch('https://api.nasa.gov/neo/rest/v1/feed?start_date=' + today + '&end_date=' + today + '&api_key=DEMO_KEY');
-        if (!resp.ok) {
-            if (resp.status === 429) throw new Error('NASA API 请求次数已达上限，请稍后再试');
-            throw new Error('NASA NeoWS API error: ' + resp.status);
-        }
-        var data = await resp.json();
+        var data = await nasaGetJSON('https://api.nasa.gov/neo/rest/v1/feed?start_date=' + today + '&end_date=' + today + '&api_key=' + NASA_API_KEY);
         var neos = data.near_earth_objects[today] || [];
         try { localStorage.setItem(cacheKey, JSON.stringify({ neos: neos, element_count: data.element_count || neos.length })); } catch(e) {}
         renderAsteroids(panel, neos, data.element_count || neos.length);
         asteroidLoaded = true;
     } catch(e) {
         console.error('Asteroid load error:', e);
-        var retryHtml = '<div style="text-align:center;padding:40px;color:#ff4060;">\u26a0\ufe0f ' + escapeHtml(e.message) + '<br><button onclick="asteroidLoaded=false;loadAsteroids()" style="margin-top:12px;padding:8px 20px;background:rgba(91,143,255,0.15);border:1px solid rgba(91,143,255,0.3);color:#5b8fff;border-radius:8px;cursor:pointer;">重试</button></div>';
+        var emsg = (e && e.message === 'RATE_LIMIT') ? 'NASA API 请求次数已达上限，请稍后再试' : ((e && e.message) || '加载失败');
+        var retryHtml = '<div style="text-align:center;padding:40px;color:#ff4060;">\u26a0\ufe0f ' + escapeHtml(emsg) + '<br><button onclick="asteroidLoaded=false;loadAsteroids()" style="margin-top:12px;padding:8px 20px;background:rgba(91,143,255,0.15);border:1px solid rgba(91,143,255,0.3);color:#5b8fff;border-radius:8px;cursor:pointer;">重试</button></div>';
         var oldCache = null;
         for (var i = 0; i < 7; i++) {
             var d = new Date(); d.setDate(d.getDate() - i);
