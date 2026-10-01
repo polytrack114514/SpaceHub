@@ -120,51 +120,6 @@
     }
     .hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 6px; }
 
-    /* 滑块人机验证（纯前端，无需密钥 / 服务端） */
-    .slider-wrap { margin: 20px 0 6px; }
-    .slider-track {
-        position: relative;
-        height: 50px;
-        border-radius: 13px;
-        background: var(--lg-sheen), rgba(10, 10, 12, 0.6);
-        border: 1px solid var(--lg-edge);
-        box-shadow: var(--lg-inset);
-        overflow: hidden;
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: none;
-    }
-    .slider-fill {
-        position: absolute; top: 0; bottom: 0; left: 0; width: 0;
-        background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.20));
-        transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .slider-text {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.85rem; letter-spacing: 0.03em;
-        color: var(--text-secondary);
-        pointer-events: none;
-        transition: color 0.2s;
-    }
-    .slider-handle {
-        position: absolute; top: 5px; left: 5px;
-        width: 40px; height: 40px; border-radius: 11px;
-        display: flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.08));
-        border: 1px solid var(--lg-edge-hover);
-        box-shadow: var(--lg-inset), 0 4px 16px rgba(0, 0, 0, 0.45);
-        color: #fff; cursor: grab;
-        transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        will-change: left;
-    }
-    .slider-handle:active { cursor: grabbing; }
-    .slider-handle svg { width: 18px; height: 18px; display: block; }
-    .slider-track.verified { border-color: rgba(255, 255, 255, 0.5); }
-    .slider-track.verified .slider-text { color: var(--text-primary); }
-    .slider-track.verified .slider-fill { background: linear-gradient(90deg, rgba(255,255,255,0.10), rgba(255,255,255,0.30)); }
-    .slider-track.verified .slider-handle { border-color: #fff; }
-
     .submit {
         width: 100%;
         margin-top: 14px;
@@ -225,17 +180,6 @@
                 <input type="password" id="confirm" placeholder="再输入一次密码" autocomplete="new-password">
             </div>
 
-            <div class="slider-wrap">
-                <!-- 纯前端滑块人机验证：无需密钥、无需服务端，国内可正常加载 -->
-                <div class="slider-track" id="sliderTrack">
-                    <div class="slider-fill" id="sliderFill"></div>
-                    <div class="slider-text" id="sliderText">按住滑块，拖动到最右端</div>
-                    <div class="slider-handle" id="sliderHandle" aria-label="拖动滑块完成验证">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-                    </div>
-                </div>
-            </div>
-
             <button type="button" class="submit" id="submitBtn" onclick="doSignup()">注册</button>
         </form>
 
@@ -260,9 +204,7 @@ try {
     console.error('[sign-up] Supabase 初始化失败:', e);
 }
 
-var sliderVerified = false;
 var submitting = false;
-var resetSlider = function () {};   // 由滑块组件初始化后覆盖
 
 function byId(id) { return document.getElementById(id); }
 function showErr(msg) {
@@ -273,73 +215,6 @@ function showOk(msg) {
     var el = byId('okBox'); el.textContent = msg; el.classList.add('show');
     byId('errBox').classList.remove('show');
 }
-
-// ==================== 滑块人机验证（纯前端） ====================
-var ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
-var CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-
-(function initSlider() {
-    var track = byId('sliderTrack');
-    var handle = byId('sliderHandle');
-    var fill = byId('sliderFill');
-    var text = byId('sliderText');
-    if (!track || !handle || !fill || !text) return;
-
-    var dragging = false, startX = 0, curX = 0;
-
-    function maxX() { return Math.max(0, track.clientWidth - handle.offsetWidth - 10); }
-    function render(x) {
-        curX = Math.max(0, Math.min(x, maxX()));
-        handle.style.left = (5 + curX) + 'px';
-        fill.style.width = (5 + curX + handle.offsetWidth) + 'px';
-    }
-    function complete() {
-        sliderVerified = true;
-        track.classList.add('verified');
-        handle.innerHTML = CHECK_SVG;
-        text.textContent = '验证通过';
-        render(maxX());
-    }
-    function reset() {
-        sliderVerified = false;
-        track.classList.remove('verified');
-        handle.innerHTML = ARROW_SVG;
-        text.textContent = '按住滑块，拖动到最右端';
-        render(0);
-    }
-    resetSlider = reset;
-
-    function pointX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
-    function onDown(e) {
-        if (sliderVerified) return;
-        dragging = true;
-        startX = pointX(e) - curX;
-        handle.style.transition = 'none';
-        fill.style.transition = 'none';
-    }
-    function onMove(e) {
-        if (!dragging) return;
-        render(pointX(e) - startX);
-        if (e.cancelable) e.preventDefault();
-    }
-    function onUp() {
-        if (!dragging) return;
-        dragging = false;
-        handle.style.transition = '';
-        fill.style.transition = '';
-        if (curX >= maxX() - 2) complete(); else render(0);
-    }
-
-    handle.addEventListener('mousedown', onDown);
-    handle.addEventListener('touchstart', onDown, { passive: true });
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('mouseup', onUp);
-    document.addEventListener('touchend', onUp);
-    window.addEventListener('resize', function () { render(sliderVerified ? maxX() : 0); });
-
-    reset();
-})();
 
 // ==================== 注册是否被管理员关闭 ====================
 async function isRegisterDisabled() {
@@ -371,7 +246,6 @@ async function doSignup() {
     if (name.length > 20) return showErr('用户名最多 20 个字符');
     if (!pwd || pwd.length < 6) return showErr('密码至少 6 位');
     if (pwd !== confirm) return showErr('两次密码不一致');
-    if (!sliderVerified) return showErr('请先拖动滑块完成验证');
 
     if (!sb) return showErr('服务未就绪，请刷新页面重试');
 
@@ -382,7 +256,6 @@ async function doSignup() {
     try {
         if (await isRegisterDisabled()) {
             showErr('注册已关闭，请联系管理员');
-            resetSlider();
             submitting = false; btn.disabled = false; btn.textContent = '注册';
             return;
         }
@@ -403,7 +276,6 @@ async function doSignup() {
         startCountdown();
     } catch (e) {
         showErr(e.message || '注册失败，请稍后重试');
-        resetSlider();
         submitting = false;
         btn.disabled = false;
         btn.textContent = '注册';
