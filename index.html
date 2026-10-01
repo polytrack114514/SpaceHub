@@ -6781,18 +6781,40 @@ async function nasaGetJSON(url, retries) {
 // APOD 图片兜底：api.nasa.gov 现对所有日期都返回 NASA logo 作为图片（title 固定 "NASA Science"），
 // 真实图片只在 science.nasa.gov/apod 页面里。浏览器直连会被 CORS 拦截，故经公共 CORS 代理抓取解析。
 var APOD_PAGE = 'https://science.nasa.gov/apod/';
-var APOD_PROXY = 'https://api.allorigins.win/raw?url=';
+// 多个公共 CORS 代理轮询兜底（任何单一代理都不可靠）
+var APOD_PROXIES = [
+    function (u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+    function (u) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); },
+    function (u) { return 'https://corsproxy.io/?url=' + encodeURIComponent(u); }
+];
 function apodDecode(s) { return String(s || '').replace(/&amp;/g, '&').replace(/&#038;/g, '&'); }
 function apodImgBroken(url) { return !url || /nasa-logo|wp-content\/themes/.test(url); }
+async function apodFetchPage() {
+    for (var p = 0; p < APOD_PROXIES.length; p++) {
+        for (var attempt = 0; attempt < 2; attempt++) {
+            try {
+                var ctrl = new AbortController();
+                var timer = setTimeout(function () { ctrl.abort(); }, 12000);
+                var resp = await fetch(APOD_PROXIES[p](APOD_PAGE), { signal: ctrl.signal });
+                clearTimeout(timer);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                var html = await resp.text();
+                if (html && html.indexOf('image-article/apod-') !== -1) return html;
+                throw new Error('no apod content');
+            } catch (e) { /* 换下一个代理重试 */ }
+        }
+    }
+    return '';
+}
 async function resolveApodImage(data) {
     if (!data) return data;
     var isVideo = data.media_type === 'video';
     var cur = data._img || (isVideo ? (data.thumbnail_url || data.url) : (data.url || data.hdurl));
     if (!apodImgBroken(cur)) return data;
     try {
-        var resp = await fetch(APOD_PROXY + encodeURIComponent(APOD_PAGE));
-        if (!resp.ok) throw new Error('proxy ' + resp.status);
-        var doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+        var html = await apodFetchPage();
+        if (!html) throw new Error('all proxies failed');
+        var doc = new DOMParser().parseFromString(html, 'text/html');
         var a = doc.querySelector('a[href*="/image-article/apod-"]');
         var img = a && a.querySelector('img');
         var src = img && img.getAttribute('src');
