@@ -6778,6 +6778,36 @@ async function nasaGetJSON(url, retries) {
     }
     throw lastErr;
 }
+// APOD 图片兜底：api.nasa.gov 现对所有日期都返回 NASA logo 作为图片（title 固定 "NASA Science"），
+// 真实图片只在 science.nasa.gov/apod 页面里。浏览器直连会被 CORS 拦截，故经公共 CORS 代理抓取解析。
+var APOD_PAGE = 'https://science.nasa.gov/apod/';
+var APOD_PROXY = 'https://api.allorigins.win/raw?url=';
+function apodDecode(s) { return String(s || '').replace(/&amp;/g, '&').replace(/&#038;/g, '&'); }
+function apodImgBroken(url) { return !url || /nasa-logo|wp-content\/themes/.test(url); }
+async function resolveApodImage(data) {
+    if (!data) return data;
+    var isVideo = data.media_type === 'video';
+    var cur = data._img || (isVideo ? (data.thumbnail_url || data.url) : (data.url || data.hdurl));
+    if (!apodImgBroken(cur)) return data;
+    try {
+        var resp = await fetch(APOD_PROXY + encodeURIComponent(APOD_PAGE));
+        if (!resp.ok) throw new Error('proxy ' + resp.status);
+        var doc = new DOMParser().parseFromString(await resp.text(), 'text/html');
+        var a = doc.querySelector('a[href*="/image-article/apod-"]');
+        var img = a && a.querySelector('img');
+        var src = img && img.getAttribute('src');
+        if (src && !apodImgBroken(src)) data._img = apodDecode(src);
+        if (a) data._href = apodDecode(a.getAttribute('href'));
+        if (!data._title || data._title === 'NASA Science') {
+            var slug = data._href ? (data._href.split('/image-article/apod-')[1] || '') : '';
+            slug = slug.replace(/\/$/, '').replace(/^\d{4}-[a-z]+-\d+-/, '').replace(/-/g, ' ');
+            if (slug) data._title = slug.replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        }
+    } catch (e) {
+        console.warn('APOD image resolve failed:', e);
+    }
+    return data;
+}
 async function loadAPOD() {
     var container = document.getElementById('apodContainer');
     if (!container) return;
@@ -6793,12 +6823,14 @@ async function loadAPOD() {
             var cacheAge = Date.now() - parseInt(cachedTime);
             if (cacheAge < 24 * 60 * 60 * 1000) {
                 var cachedData = JSON.parse(cached);
+                await resolveApodImage(cachedData);
                 renderAPOD(cachedData);
                 return;
             }
         }
         container.innerHTML = '<div class="apod-container"><div class="apod-loading">📡 正在获取今日天文图片...</div></div>';
         var data = await nasaGetJSON('https://api.nasa.gov/planetary/apod?api_key=' + NASA_API_KEY);
+        await resolveApodImage(data);
         localStorage.setItem(cacheKey, JSON.stringify(data));
         localStorage.setItem(timeKey, String(Date.now()));
         renderAPOD(data);
@@ -6814,6 +6846,7 @@ async function loadAPOD() {
             cachedData = null;
         }
         if (cachedData) {
+            await resolveApodImage(cachedData);
             renderAPOD(cachedData);
             var note = document.createElement('div');
             note.style.cssText = 'text-align:center;padding:8px;color:var(--text-muted);font-size:0.8rem;';
@@ -6827,22 +6860,25 @@ async function loadAPOD() {
 function renderAPOD(data) {
     var container = document.getElementById('apodContainer');
     if (!container || !data) return;
-    var imgUrl = data.thumbnail_url || data.url || data.hdurl || '';
     var isVideo = data.media_type === 'video';
+    var imgUrl = data._img || (isVideo ? (data.thumbnail_url || '') : (data.url || data.hdurl || ''));
+    if (apodImgBroken(imgUrl)) imgUrl = '';
+    var linkUrl = data._href || (isVideo ? data.url : (data.hdurl || data.url)) || APOD_PAGE;
+    var title = data._title || data.title || '';
     var html = '<div class="apod-container">';
     html += '<div class="apod-header">';
     html += '<span class="apod-badge">NASA APOD</span>';
     html += '<span class="apod-title">每日天文一图</span>';
     html += '</div>';
     html += '<div class="apod-body">';
-    if (isVideo) {
-        html += '<div class="apod-image-wrap"><a href="' + (data.url||'') + '" target="_blank"><img src="' + (data.thumbnail_url||'') + '" alt="APOD" loading="lazy" decoding="async"></a></div>';
+    if (imgUrl) {
+        html += '<div class="apod-image-wrap"><a href="' + escapeHtml(linkUrl) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(imgUrl) + '" alt="' + escapeHtml(title) + '" loading="lazy" decoding="async" onerror="this.closest(\'.apod-image-wrap\').style.display=\'none\'"></a></div>';
     } else {
-        html += '<div class="apod-image-wrap"><img src="' + imgUrl + '" alt="' + escapeHtml(data.title||'') + '" loading="lazy" decoding="async" onerror="this.style.display=\'none\'"></div>';
+        html += '<div class="apod-image-wrap"><a href="' + APOD_PAGE + '" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;min-height:130px;width:100%;color:var(--text-muted);font-size:0.85rem;text-decoration:none;border:1px dashed rgba(255,255,255,0.22);border-radius:12px;">🔭 查看今日原图 · science.nasa.gov/apod</a></div>';
     }
     html += '<div class="apod-info">';
     html += '<div class="apod-date">' + escapeHtml(data.date||'') + '</div>';
-    html += '<h3>' + escapeHtml(data.title||'') + '</h3>';
+    html += '<h3>' + escapeHtml(title) + '</h3>';
     var desc = (data.explanation||'').substring(0, 300);
     if ((data.explanation||'').length > 300) desc += '...';
     html += '<p>' + escapeHtml(desc) + '</p>';
