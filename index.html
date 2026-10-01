@@ -4265,42 +4265,38 @@ hr, .divider {
             outline-offset: 2px;
         }
 
-        /* ==================== 液态玻璃 · 科幻版 (Liquid Glass Sci-Fi) ==================== */
-        /* 星舰全息玻璃：通透毛玻璃 + 霓虹冷光描边 + 全息虹彩镀膜 + 流动扫光 */
+        /* ==================== 液态玻璃 · 黑白版 (Liquid Glass Mono) ==================== */
+        /* 单色玻璃：通透毛玻璃（去饱和） + 白色高光描边 + 灰阶扫光，无任何彩色光效 */
         :root {
-            --lg-tint:        rgba(9, 15, 33, 0.60);
-            --lg-tint-hover:  rgba(12, 20, 44, 0.68);
-            --lg-tint-soft:   rgba(9, 15, 33, 0.54);
-            --lg-tint-strong: rgba(7, 11, 25, 0.80);
-            /* 霓虹冷光 */
-            --lg-neon:       rgba(0, 232, 255, 0.9);
-            --lg-neon-2:     rgba(181, 88, 255, 0.9);
-            --lg-edge:       rgba(0, 232, 255, 0.26);
-            --lg-edge-hover: rgba(0, 232, 255, 0.62);
-            --lg-blur:    blur(18px) saturate(180%);
-            --lg-blur-sm: blur(16px) saturate(170%);
-            --lg-blur-lg: blur(30px) saturate(195%);
+            --lg-tint:        rgba(11, 11, 13, 0.62);
+            --lg-tint-hover:  rgba(20, 20, 23, 0.70);
+            --lg-tint-soft:   rgba(11, 11, 13, 0.55);
+            --lg-tint-strong: rgba(6, 6, 8, 0.82);
+            /* 黑白：仅白 / 灰阶 */
+            --lg-edge:       rgba(255, 255, 255, 0.16);
+            --lg-edge-hover: rgba(255, 255, 255, 0.44);
+            --lg-blur:    blur(18px) saturate(0%);
+            --lg-blur-sm: blur(16px) saturate(0%);
+            --lg-blur-lg: blur(30px) saturate(0%);
             /* 顶部镜面高光 */
             --lg-sheen: radial-gradient(130% 100% at 14% -10%,
-                rgba(255, 255, 255, 0.16) 0%,
-                rgba(255, 255, 255, 0.03) 38%,
+                rgba(255, 255, 255, 0.18) 0%,
+                rgba(255, 255, 255, 0.04) 38%,
                 rgba(255, 255, 255, 0) 62%);
-            /* 全息虹彩镀膜 */
+            /* 灰阶镀膜 */
             --lg-iris: linear-gradient(135deg,
-                rgba(0, 232, 255, 0.11) 0%,
-                rgba(91, 143, 255, 0.03) 28%,
-                rgba(255, 255, 255, 0) 50%,
-                rgba(181, 88, 255, 0.05) 72%,
-                rgba(255, 61, 127, 0.11) 100%);
-            /* 内描边冷光 */
-            --lg-inset: inset 0 1px 0 rgba(255, 255, 255, 0.20),
-                        inset 0 0 0 1px rgba(0, 232, 255, 0.06),
-                        inset 0 -20px 34px -22px rgba(0, 232, 255, 0.28);
-            /* 外发光 */
-            --lg-glow: 0 0 0 1px rgba(0, 232, 255, 0.07),
-                       0 0 24px rgba(0, 232, 255, 0.10),
-                       0 0 64px rgba(91, 143, 255, 0.10),
-                       0 14px 44px rgba(0, 0, 0, 0.55);
+                rgba(255, 255, 255, 0.10) 0%,
+                rgba(255, 255, 255, 0.02) 34%,
+                rgba(255, 255, 255, 0) 56%,
+                rgba(255, 255, 255, 0.06) 100%);
+            /* 内描边高光 */
+            --lg-inset: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+                        inset 0 -20px 34px -22px rgba(255, 255, 255, 0.16);
+            /* 外发光（灰白） */
+            --lg-glow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+                       0 0 24px rgba(255, 255, 255, 0.08),
+                       0 14px 44px rgba(0, 0, 0, 0.6);
         }
         /* 流动扫光 */
         @keyframes lgSweep {
@@ -4321,10 +4317,9 @@ hr, .divider {
             background: var(--lg-sheen), var(--lg-iris), var(--lg-tint-hover) !important;
             border-color: var(--lg-edge-hover) !important;
             box-shadow: var(--lg-inset),
-                        0 0 0 1px rgba(0, 232, 255, 0.28),
-                        0 0 30px rgba(0, 232, 255, 0.22),
-                        0 0 70px rgba(181, 88, 255, 0.18),
-                        0 18px 50px rgba(0, 0, 0, 0.6) !important;
+                        0 0 0 1px rgba(255, 255, 255, 0.34),
+                        0 0 30px rgba(255, 255, 255, 0.16),
+                        0 18px 50px rgba(0, 0, 0, 0.62) !important;
             transform: translateY(-3px) !important;
         }
         .post-card::after, .launch-card::after {
@@ -4336,9 +4331,9 @@ hr, .divider {
             width: 38%;
             background: linear-gradient(100deg,
                 transparent 0%,
-                rgba(255, 255, 255, 0.10) 38%,
-                rgba(0, 232, 255, 0.22) 50%,
-                rgba(255, 255, 255, 0.10) 62%,
+                rgba(255, 255, 255, 0.12) 38%,
+                rgba(255, 255, 255, 0.30) 50%,
+                rgba(255, 255, 255, 0.12) 62%,
                 transparent 100%);
             transform: translateX(-160%) skewX(-18deg);
             pointer-events: none;
@@ -4359,16 +4354,16 @@ hr, .divider {
             box-shadow: var(--lg-inset), 0 4px 16px rgba(0, 0, 0, 0.28) !important;
         }
         .search-box input:focus {
-            border-color: rgba(255, 255, 255, 0.22) !important;
+            border-color: rgba(255, 255, 255, 0.30) !important;
             box-shadow: var(--lg-inset),
-                        0 0 0 3px rgba(91, 143, 255, 0.14),
-                        0 0 22px rgba(91, 143, 255, 0.18) !important;
+                        0 0 0 3px rgba(255, 255, 255, 0.12),
+                        0 0 22px rgba(255, 255, 255, 0.14) !important;
         }
         .tab.active {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(91, 143, 255, 0.16)) !important;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06)) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24),
                         inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-                        0 0 16px rgba(91, 143, 255, 0.12) !important;
+                        0 0 16px rgba(255, 255, 255, 0.10) !important;
         }
 
         /* --- 弹窗 / 模态框 --- */
@@ -4379,15 +4374,15 @@ hr, .divider {
             backdrop-filter: var(--lg-blur-lg) !important;
             -webkit-backdrop-filter: var(--lg-blur-lg) !important;
             box-shadow: var(--lg-inset),
-                        0 0 46px rgba(91, 143, 255, 0.08),
-                        0 24px 70px rgba(0, 0, 0, 0.62) !important;
+                        0 0 46px rgba(255, 255, 255, 0.06),
+                        0 24px 70px rgba(0, 0, 0, 0.64) !important;
         }
         .modal-overlay {
-            backdrop-filter: blur(12px) saturate(140%) !important;
-            -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+            backdrop-filter: blur(12px) saturate(0%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(0%) !important;
         }
         .modal-input, .modal-textarea {
-            background: var(--lg-sheen), rgba(8, 12, 24, 0.6) !important;
+            background: var(--lg-sheen), rgba(10, 10, 12, 0.6) !important;
             border: 1px solid var(--lg-edge) !important;
             box-shadow: var(--lg-inset) !important;
         }
@@ -4405,8 +4400,8 @@ hr, .divider {
             background: var(--lg-sheen), var(--lg-tint-hover) !important;
             border-color: var(--lg-edge-hover) !important;
             box-shadow: var(--lg-inset),
-                        0 0 26px rgba(91, 143, 255, 0.12),
-                        0 12px 40px rgba(0, 0, 0, 0.5) !important;
+                        0 0 26px rgba(255, 255, 255, 0.10),
+                        0 12px 40px rgba(0, 0, 0, 0.52) !important;
         }
 
         /* --- 页脚 --- */
@@ -4421,10 +4416,10 @@ hr, .divider {
         /* --- 移动端：保留原有"关闭毛玻璃"性能策略，改用更高不透明底保证可读 --- */
         @media (max-width: 768px) {
             :root {
-                --lg-tint:        rgba(13, 18, 34, 0.92);
-                --lg-tint-hover:  rgba(16, 22, 42, 0.95);
-                --lg-tint-soft:   rgba(13, 18, 34, 0.90);
-                --lg-tint-strong: rgba(10, 14, 28, 0.96);
+                --lg-tint:        rgba(13, 13, 15, 0.92);
+                --lg-tint-hover:  rgba(20, 20, 23, 0.95);
+                --lg-tint-soft:   rgba(13, 13, 15, 0.90);
+                --lg-tint-strong: rgba(8, 8, 10, 0.96);
             }
             .post-card, .launch-card, .notification-item, .profile-header, .profile-section,
             .online-users-bar, .ai-chat-wrap, .apod-container, .tabs, .search-box input,
