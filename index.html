@@ -4586,7 +4586,8 @@ if (typeof supabase === 'undefined') {
                                     <button class="notify-btn" id="notifyBtn" onclick="openNotifyModal()" title="消息通知">🔔<span class="notify-badge" id="notifyBadge" style="display:none;">0</span></button>
                                     <button class="notify-btn" onclick="openSpaceDataModal()" title="太空数据" style="margin-left:4px;">🛰️</button>
                         <div class="auth-area" id="authArea">
-                <button class="btn-auth" onclick="openAuthModal()">登录 / 注册</button>
+                <button class="btn-auth" onclick="openAuthModal()">登录</button>
+                <button class="btn-auth" onclick="window.location.href='./sign-up'">注册</button>
             </div>
             <button class="admin-btn-entry" id="adminEntryBtn" onclick="openAdminModal()">⚙ 管理</button>
             <button class="fab-post" onclick="openModal()">✨ 发布帖子</button>
@@ -4679,7 +4680,7 @@ if (typeof supabase === 'undefined') {
             <button class="auth-submit" id="authSubmitBtn" onclick="handleAuth()">登录</button>
             <div class="auth-switch">
                 <span id="authSwitchText">还没有账号？</span>
-                <a id="authSwitchLink" onclick="toggleAuthMode()">注册</a>
+                <a id="authSwitchLink" onclick="window.location.href='./sign-up'">前往注册</a>
             </div>
             <button class="auth-close" onclick="closeAuthModal()">&times;</button>
         </div>
@@ -5352,7 +5353,6 @@ if (typeof supabase === 'undefined') {
         // ==================== Supabase 无需心跳保活 ====================
         // ==================== 用户账号系统 ====================
         let currentUser = JSON.parse(localStorage.getItem('space_user')) || null;
-        let authMode = 'login';
         let allUsers = [];
         async function loadUsers() {
             try {
@@ -5361,17 +5361,6 @@ if (typeof supabase === 'undefined') {
                 allUsers = data || [];
             } catch (e) {
                 console.error('加载用户失败:', e);
-            }
-        }
-        async function saveUser(user) {
-            try {
-                const { data, error } = await sb.rpc('register_user', { p_name: user.name, p_password: user.password, p_avatar: user.avatar });
-                if (error) throw error;
-                if (data && data.error) throw new Error(data.error);
-                return true;
-            } catch (e) {
-                console.error('保存用户失败:', e);
-                return false;
             }
         }
         function renderAuthArea() {
@@ -5393,11 +5382,11 @@ if (typeof supabase === 'undefined') {
                 var adminBtn = document.getElementById('adminEntryBtn');
                 if (adminBtn) adminBtn.style.display = 'inline-flex';
             } else {
-                area.innerHTML = `<button class="btn-auth" onclick="openAuthModal()">登录 / 注册</button>`;
+                area.innerHTML = `<button class="btn-auth" onclick="openAuthModal()">登录</button>
+                    <button class="btn-auth" onclick="window.location.href='./sign-up'">注册</button>`;
             }
         }
         function openAuthModal() {
-            authMode = 'login';
             updateAuthUI();
             document.getElementById('authUsername').value = '';
             document.getElementById('authPassword').value = '';
@@ -5410,35 +5399,16 @@ if (typeof supabase === 'undefined') {
         function closeAuthModal() {
             document.getElementById('authModal').classList.remove('show');
         }
-        function toggleAuthMode() {
-            if (authMode === 'login' && siteSettings.disableRegister) {
-                showAuthErr('注册已关闭，请联系管理员');
-                return;
-            }
-            authMode = authMode === 'login' ? 'signup' : 'login';
-            updateAuthUI();
-            document.getElementById('authError').classList.remove('show');
-            document.getElementById('authSuccess').classList.remove('show');
-        }
         function updateAuthUI() {
-            if (authMode === 'signup') {
-                document.getElementById('authTitle').textContent = '注册';
-                document.getElementById('authSubmitBtn').textContent = '注册';
-                document.getElementById('authSwitchText').textContent = '已有账号？';
-                document.getElementById('authSwitchLink').textContent = '登录';
-                document.getElementById('authConfirmField').style.display = 'block';
-            } else {
-                document.getElementById('authTitle').textContent = '登录';
-                document.getElementById('authSubmitBtn').textContent = '登录';
-                document.getElementById('authSwitchText').textContent = '还没有账号？';
-                document.getElementById('authSwitchLink').textContent = '注册';
-                document.getElementById('authConfirmField').style.display = 'none';
-            }
+            document.getElementById('authTitle').textContent = '登录';
+            document.getElementById('authSubmitBtn').textContent = '登录';
+            document.getElementById('authSwitchText').textContent = '还没有账号？';
+            document.getElementById('authSwitchLink').textContent = '前往注册';
+            document.getElementById('authConfirmField').style.display = 'none';
         }
         async function handleAuth() {
             const username = document.getElementById('authUsername').value.trim();
             const password = document.getElementById('authPassword').value;
-            const confirm = document.getElementById('authConfirm').value;
             const errEl = document.getElementById('authError');
             const sucEl = document.getElementById('authSuccess');
             const btn = document.getElementById('authSubmitBtn');
@@ -5449,43 +5419,20 @@ if (typeof supabase === 'undefined') {
             btn.disabled = true;
             btn.textContent = '请稍候...';
             await loadUsers();
-            if (authMode === 'signup') {
-                if (siteSettings.disableRegister) {
-                    showAuthErr('注册已关闭，请联系管理员');
-                    btn.disabled = false;
-                    btn.textContent = '注册';
-                    return;
-                }
-                if (password !== confirm) { showAuthErr('两次密码不一致'); btn.disabled = false; btn.textContent = '注册'; return; }
-                const newUser = { name: username, password: password, avatar: getAvatar(username) };
-                const saved = await saveUser(newUser);
-                if (!saved) { showAuthErr('注册失败，用户名可能已存在'); btn.disabled = false; btn.textContent = '注册'; return; }
-                showAuthSuc('注册成功！请登录');
-                authMode = 'login';
-                updateAuthUI();
-                document.getElementById('authPassword').value = '';
-                document.getElementById('authConfirm').value = '';
-            } else {
-                const { data: loginData, error: loginErr } = await sb.rpc('verify_user_login', { p_name: username, p_password: password });
-                if (loginErr || !loginData) { showAuthErr('用户名或密码错误'); btn.disabled = false; btn.textContent = '登录'; return; }
-                if (loginData.banned) { showAuthErr('该账号已被禁言，请联系管理员'); btn.disabled = false; btn.textContent = '登录'; return; }
-                currentUser = { name: loginData.name, avatar: loginData.avatar };
-                localStorage.setItem('space_user', JSON.stringify(currentUser));
-                closeAuthModal();
-                renderAuthArea();
-            }
+            const { data: loginData, error: loginErr } = await sb.rpc('verify_user_login', { p_name: username, p_password: password });
+            if (loginErr || !loginData) { showAuthErr('用户名或密码错误'); btn.disabled = false; btn.textContent = '登录'; return; }
+            if (loginData.banned) { showAuthErr('该账号已被禁言，请联系管理员'); btn.disabled = false; btn.textContent = '登录'; return; }
+            currentUser = { name: loginData.name, avatar: loginData.avatar };
+            localStorage.setItem('space_user', JSON.stringify(currentUser));
+            closeAuthModal();
+            renderAuthArea();
             btn.disabled = false;
-            btn.textContent = authMode === 'login' ? '登录' : '注册';
+            btn.textContent = '登录';
         }
         function showAuthErr(msg) {
             const el = document.getElementById('authError');
             el.textContent = msg; el.classList.add('show');
             document.getElementById('authSuccess').classList.remove('show');
-        }
-        function showAuthSuc(msg) {
-            const el = document.getElementById('authSuccess');
-            el.textContent = msg; el.classList.add('show');
-            document.getElementById('authError').classList.remove('show');
         }
         function handleLogout() {
             currentUser = null;

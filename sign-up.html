@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 · SpaceHub 星枢</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Exo+2:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --text-primary: #e8eefc;
+        --text-secondary: #97a3bd;
+        --text-muted: #66708a;
+        --lg-tint:        rgba(11, 11, 13, 0.62);
+        --lg-tint-strong: rgba(6, 6, 8, 0.84);
+        --lg-edge:        rgba(255, 255, 255, 0.16);
+        --lg-edge-hover:  rgba(255, 255, 255, 0.44);
+        --lg-sheen: radial-gradient(130% 100% at 14% -10%,
+            rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 38%, rgba(255, 255, 255, 0) 62%);
+        --lg-iris: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.02) 34%,
+            rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.06) 100%);
+        --lg-inset: inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+                    inset 0 -20px 34px -22px rgba(255, 255, 255, 0.16);
+        --lg-glow: 0 0 0 1px rgba(255, 255, 255, 0.08),
+                   0 0 24px rgba(255, 255, 255, 0.08),
+                   0 14px 44px rgba(0, 0, 0, 0.6);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Exo 2', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #000;
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 20px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+    }
+    /* 极暗星野 + 微星云（与首页背景一致） */
+    .bg-image {
+        position: fixed; inset: 0; z-index: 0; background-color: #000;
+        background-image:
+            radial-gradient(1.6px 1.6px at 31px 47px,   rgba(255, 255, 255, 0.52) 0%, transparent 100%),
+            radial-gradient(1.2px 1.2px at 149px 193px, rgba(255, 255, 255, 0.38) 0%, transparent 100%),
+            radial-gradient(1.0px 1.0px at 233px 89px,  rgba(255, 255, 255, 0.30) 0%, transparent 100%),
+            radial-gradient(1.4px 1.4px at 91px 262px,  rgba(255, 255, 255, 0.40) 0%, transparent 100%),
+            radial-gradient(1.0px 1.0px at 301px 331px, rgba(255, 255, 255, 0.26) 0%, transparent 100%),
+            radial-gradient(62% 46% at 16% 8%,   rgba(96, 126, 205, 0.10) 0%, transparent 62%),
+            radial-gradient(56% 44% at 86% 84%,  rgba(132, 98, 196, 0.075) 0%, transparent 64%),
+            radial-gradient(78% 58% at 52% 116%, rgba(64, 96, 160, 0.06) 0%, transparent 66%);
+        background-size:
+            337px 337px, 419px 419px, 271px 271px, 461px 461px, 383px 383px,
+            100% 100%, 100% 100%, 100% 100%;
+        background-repeat: repeat, repeat, repeat, repeat, repeat, no-repeat, no-repeat, no-repeat;
+    }
+    .bg-overlay {
+        position: fixed; inset: 0; z-index: 1; pointer-events: none;
+        background: rgba(6, 8, 14, 0.32);
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+        background-size: 64px 64px;
+    }
+    .wrap { position: relative; z-index: 2; width: 100%; max-width: 420px; }
+    .card {
+        position: relative;
+        background: var(--lg-sheen), var(--lg-iris), var(--lg-tint-strong);
+        border: 1px solid var(--lg-edge-hover);
+        border-radius: 22px;
+        backdrop-filter: blur(30px) saturate(0%);
+        -webkit-backdrop-filter: blur(30px) saturate(0%);
+        box-shadow: var(--lg-inset), 0 0 46px rgba(255, 255, 255, 0.06), 0 24px 70px rgba(0, 0, 0, 0.64);
+        padding: 34px 28px 28px;
+        overflow: hidden;
+    }
+    .card::after {
+        content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+    }
+    .brand {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        font-family: 'Audiowide', sans-serif; font-size: 1.05rem; letter-spacing: 0.04em;
+        color: var(--text-primary); margin-bottom: 4px;
+    }
+    .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; box-shadow: 0 0 12px rgba(255,255,255,0.8); }
+    h1 { font-size: 1.65rem; text-align: center; font-weight: 700; letter-spacing: -0.01em; margin-top: 14px; }
+    .sub { text-align: center; color: var(--text-secondary); font-size: 0.88rem; margin-top: 4px; margin-bottom: 22px; }
+
+    .msg { display: none; font-size: 0.85rem; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; line-height: 1.5; }
+    .msg.show { display: block; }
+    .msg.err { background: rgba(255, 61, 127, 0.10); border: 1px solid rgba(255, 61, 127, 0.35); color: #ff9bb9; }
+    .msg.ok  { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.28); color: #dfe8ff; }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 7px; letter-spacing: 0.02em; }
+    .field input {
+        width: 100%;
+        background: var(--lg-sheen), rgba(10, 10, 12, 0.6);
+        border: 1px solid var(--lg-edge);
+        border-radius: 12px;
+        padding: 12px 14px;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.25s, box-shadow 0.25s;
+        box-shadow: var(--lg-inset);
+    }
+    .field input::placeholder { color: var(--text-muted); }
+    .field input:focus {
+        border-color: rgba(255, 255, 255, 0.34);
+        box-shadow: var(--lg-inset), 0 0 0 3px rgba(255, 255, 255, 0.10), 0 0 22px rgba(255, 255, 255, 0.12);
+    }
+    .hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 6px; }
+
+    .cf-wrap { margin: 20px 0 6px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .cf-note { display: none; font-size: 0.76rem; color: var(--text-muted); text-align: center; }
+    .cf-note.show { display: block; }
+
+    .submit {
+        width: 100%;
+        margin-top: 14px;
+        padding: 13px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--lg-edge-hover);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06));
+        color: #fff;
+        font-size: 0.98rem;
+        font-weight: 600;
+        font-family: inherit;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        box-shadow: var(--lg-inset);
+        transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s, border-color 0.25s, background-color 0.25s;
+    }
+    .submit:hover:not(:disabled) {
+        border-color: #fff;
+        transform: translateY(-2px);
+        box-shadow: var(--lg-inset), 0 0 26px rgba(255, 255, 255, 0.18), 0 12px 34px rgba(0, 0, 0, 0.5);
+    }
+    .submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .foot { text-align: center; font-size: 0.85rem; color: var(--text-secondary); margin-top: 20px; }
+    .foot a { color: #fff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, 0.35); padding-bottom: 1px; }
+    .foot a:hover { border-bottom-color: #fff; }
+    @media (max-width: 480px) {
+        .card { padding: 28px 20px 22px; border-radius: 18px; }
+        h1 { font-size: 1.45rem; }
+    }
+</style>
+</head>
+<body>
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
+<main class="wrap">
+    <div class="card">
+        <div class="brand"><span class="dot"></span>SpaceHub 星枢</div>
+        <h1>注册账号</h1>
+        <p class="sub">创建账号后即可发帖、点赞与收藏</p>
+
+        <div class="msg err" id="errBox"></div>
+        <div class="msg ok" id="okBox"></div>
+
+        <form id="signupForm" autocomplete="off" onsubmit="return false;">
+            <div class="field">
+                <label for="username">用户名</label>
+                <input type="text" id="username" placeholder="起一个用户名" maxlength="20" autocomplete="username">
+                <div class="hint">最多 20 个字符</div>
+            </div>
+            <div class="field">
+                <label for="password">密码</label>
+                <input type="password" id="password" placeholder="密码（至少 6 位）" autocomplete="new-password">
+            </div>
+            <div class="field">
+                <label for="confirm">确认密码</label>
+                <input type="password" id="confirm" placeholder="再输入一次密码" autocomplete="new-password">
+            </div>
+
+            <div class="cf-wrap">
+                <!-- Cloudflare Turnstile 人机验证
+                     注意：下面的 data-sitekey 目前用的是 Cloudflare 官方「始终放行」测试 key。
+                     上线前请到 Cloudflare 控制台新建 Turnstile 站点，替换为你自己的真实 site key。 -->
+                <div class="cf-turnstile" id="cfWidget"
+                     data-sitekey="1x00000000000000000000AA"
+                     data-theme="dark"
+                     data-language="zh-cn"
+                     data-callback="onTurnstileSuccess"
+                     data-expired-callback="onTurnstileExpired"
+                     data-error-callback="onTurnstileError"></div>
+                <div class="cf-note" id="cfNote">正在加载人机验证…</div>
+            </div>
+
+            <button type="button" class="submit" id="submitBtn" onclick="doSignup()">注册</button>
+        </form>
+
+        <div class="foot">已有账号？<a href="./">返回首页登录</a></div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>if (typeof supabase === 'undefined') { document.write('<' + 'script src="https://unpkg.com/@supabase/supabase-js@2"><' + '/script>'); }</script>
+<script>if (typeof supabase === 'undefined') { document.write('<' + 'script src="https://cdn.bootcdn.net/ajax/libs/supabase/2.76.1/supabase.min.js"><' + '/script>'); }</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script>
+// ==================== Supabase 配置（与首页一致） ====================
+var SUPABASE_URL = 'https://tktfrrvaqwbtdhiqwnna.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdGZycnZhcXdidGRoaXF3bm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzcyMjYsImV4cCI6MjEwMTMxMzIyNn0.CYNPqmQUrnkMFUq-Bkd_09q7CjQ8rZlNX5brb5-UrbQ';
+var HOME_URL = './';                 // 注册完成后跳回首页
+var REDIRECT_SECONDS = 5;            // 注册成功后等待秒数
+
+var sb = null;
+try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+    console.error('[sign-up] Supabase 初始化失败:', e);
+}
+
+var turnstileToken = '';
+var submitting = false;
+
+function byId(id) { return document.getElementById(id); }
+function showErr(msg) {
+    var el = byId('errBox'); el.textContent = msg; el.classList.add('show');
+    byId('okBox').classList.remove('show');
+}
+function showOk(msg) {
+    var el = byId('okBox'); el.textContent = msg; el.classList.add('show');
+    byId('errBox').classList.remove('show');
+}
+
+// ==================== Cloudflare Turnstile 回调 ====================
+function onTurnstileSuccess(token) {
+    turnstileToken = token;
+    byId('cfNote').classList.remove('show');
+}
+function onTurnstileExpired() { turnstileToken = ''; byId('cfNote').textContent = '人机验证已过期，请重新验证'; byId('cfNote').classList.add('show'); }
+function onTurnstileError()   { turnstileToken = ''; byId('cfNote').textContent = '人机验证加载失败，请检查网络后刷新页面重试'; byId('cfNote').classList.add('show'); }
+
+// Turnstile 脚本加载超时兜底提示
+window.addEventListener('load', function () {
+    setTimeout(function () {
+        if (!window.turnstile) {
+            byId('cfNote').textContent = '人机验证加载失败（可能网络受限），请刷新页面重试';
+            byId('cfNote').classList.add('show');
+        } else {
+            byId('cfNote').classList.remove('show');
+        }
+    }, 10000);
+});
+
+// ==================== 注册是否被管理员关闭 ====================
+async function isRegisterDisabled() {
+    if (!sb) return false;
+    try {
+        var res = await sb.from('site_settings').select('*');
+        if (res.error) throw res.error;
+        var disabled = false;
+        (res.data || []).forEach(function (row) { if (row.key === 'disableRegister') disabled = !!row.value; });
+        return disabled;
+    } catch (e) {
+        console.warn('[sign-up] 读取站点设置失败:', e.message);
+        return false;
+    }
+}
+
+// ==================== 提交注册 ====================
+async function doSignup() {
+    if (submitting) return;
+    var name = byId('username').value.trim();
+    var pwd = byId('password').value;
+    var confirm = byId('confirm').value;
+    var btn = byId('submitBtn');
+
+    byId('errBox').classList.remove('show');
+    byId('okBox').classList.remove('show');
+
+    if (!name) return showErr('请输入用户名');
+    if (name.length > 20) return showErr('用户名最多 20 个字符');
+    if (!pwd || pwd.length < 6) return showErr('密码至少 6 位');
+    if (pwd !== confirm) return showErr('两次密码不一致');
+    if (!turnstileToken) return showErr('请先完成人机验证');
+
+    if (!sb) return showErr('服务未就绪，请刷新页面重试');
+
+    submitting = true;
+    btn.disabled = true;
+    btn.textContent = '注册中…';
+
+    try {
+        if (await isRegisterDisabled()) {
+            showErr('注册已关闭，请联系管理员');
+            resetTurnstile();
+            submitting = false; btn.disabled = false; btn.textContent = '注册';
+            return;
+        }
+
+        var res = await sb.rpc('register_user', { p_name: name, p_password: pwd, p_avatar: '🚀' });
+        if (res.error) throw res.error;
+        if (res.data && res.data.error) {
+            var m = String(res.data.error);
+            if (/duplicate|unique/i.test(m)) throw new Error('用户名已被注册，请换一个');
+            throw new Error(m);
+        }
+
+        // 注册成功：锁定表单，倒计时后回首页登录
+        byId('username').disabled = true;
+        byId('password').disabled = true;
+        byId('confirm').disabled = true;
+        btn.textContent = '注册成功';
+        startCountdown();
+    } catch (e) {
+        showErr(e.message || '注册失败，请稍后重试');
+        resetTurnstile();
+        submitting = false;
+        btn.disabled = false;
+        btn.textContent = '注册';
+    }
+}
+
+function resetTurnstile() {
+    turnstileToken = '';
+    try { if (window.turnstile) turnstile.reset(); } catch (e) {}
+}
+
+function startCountdown() {
+    var left = REDIRECT_SECONDS;
+    showOk('注册成功！' + left + ' 秒后自动返回首页登录…');
+    var timer = setInterval(function () {
+        left--;
+        if (left <= 0) {
+            clearInterval(timer);
+            showOk('注册成功！正在返回首页…');
+            window.location.href = HOME_URL;
+            return;
+        }
+        showOk('注册成功！' + left + ' 秒后自动返回首页登录…');
+    }, 1000);
+}
+
+// 若管理员已关闭注册，进入页面即提示
+window.addEventListener('load', function () {
+    isRegisterDisabled().then(function (disabled) {
+        if (disabled) {
+            showErr('注册已关闭，请联系管理员');
+            byId('submitBtn').disabled = true;
+        }
+    });
+});
+</script>
+</body>
+</html>
