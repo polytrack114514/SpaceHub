@@ -2875,46 +2875,6 @@ hr, .divider {
 }
 
 
-        /* ==================== 收藏 ==================== */
-        .bookmark-btn {
-            background: transparent;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            color: rgba(255, 215, 0, 0.8);
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            opacity: 0;
-            transition: transform 0.2s ease, opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
-            white-space: nowrap;
-        }
-        .post-card:hover .bookmark-btn { opacity: 1; }
-        .bookmark-btn.bookmarked { color: #ffd700; border-color: rgba(255, 215, 0, 0.5); background: rgba(255, 215, 0, 0.08); opacity: 1; }
-        .bookmark-btn:hover { background: rgba(255, 215, 0, 0.15); border-color: rgba(255, 215, 0, 0.5); }
-        @media (max-width: 600px) {
-            .bookmark-btn { opacity: 1; }
-        }
-
-        .bookmarks-panel { padding: 16px; }
-        .bookmark-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); }
-        .bookmark-empty-icon { font-size: 3rem; margin-bottom: 12px; }
-        .bookmark-post-item {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            border-radius: 12px; padding: 14px; margin-bottom: 10px; cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
-        }
-        .bookmark-post-item:hover { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.04); }
-        .bookmark-post-title { font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
-        .bookmark-post-meta { font-size: 0.78rem; color: var(--text-muted); display: flex; gap: 10px; }
-        .bookmark-remove-btn {
-            float: right; background: transparent; border: none; color: var(--text-muted);
-            cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 6px;
-            transition: transform 0.2s, opacity 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
-        }
-        .bookmark-remove-btn:hover { color: #ff4757; background: rgba(255,71,87,0.1); }
-
-
-
 /* ==================== 3D太阳系(NASA Eyes) ==================== */
 .nasa-eyes-panel { position: relative; height: 600px; overflow: hidden; border-radius: 16px; background: #000; }
 .nasa-eyes-panel iframe { width: 100%; height: 100%; border: none; display: block; }
@@ -4579,9 +4539,6 @@ if (typeof supabase === 'undefined') {
                 <button class="tab" data-tab="launches">
                     <span class="icon">🚀</span>火箭发射
                 </button>
-                <button class="tab" data-tab="bookmarks">
-                    <span class="icon">⭐</span>收藏
-                </button>
             </div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
@@ -4625,9 +4582,6 @@ if (typeof supabase === 'undefined') {
                 <div class="launch-list" id="launchList"></div>
                 <div class="launch-list" id="launchedList" style="display:none;"></div>
             </div>
-        </div>
-        <div class="posts-list" id="bookmarksTabContainer" style="display:none;">
-            <div class="loading">正在加载收藏...</div>
         </div>
     </div>
     <!-- 发帖弹窗 -->
@@ -5153,7 +5107,6 @@ if (typeof supabase === 'undefined') {
                                 <button class="pin-btn" onclick="togglePin('${post.id}')" title="置顶/取消置顶">${post.pinned ? '📌 取消置顶' : '📌 置顶'}</button>
                                 ${currentUser && post.author === currentUser.name ? `<button class="edit-btn" onclick="editPost('${post.id}')" title="编辑帖子">✏️ 编辑</button>` : ''}
                                 <button class="delete-btn" onclick="deletePost('${post.id}')" title="删除帖子">🗑 删除</button>
-                                <button class="bookmark-btn${isBookmarked('${post.id}') ? ' bookmarked' : ''}" data-post-id="${post.id}" onclick="toggleBookmark('${post.id}', '${escapeHtml(post.author)}')" title="收藏/取消收藏">${isBookmarked('${post.id}') ? '⭐ 已收藏' : '☆ 收藏'}</button>
                             </div>
                         </div>
                         ${post.title ? `<div class="post-title">${post.pinned ? '📌 ' : ''}${escapeHtml(post.title)}</div>` : ''}
@@ -5332,25 +5285,16 @@ if (typeof supabase === 'undefined') {
                     document.getElementById('postsList').style.display = 'none';
                     document.getElementById('aiChatContainer').style.display = '';
                     document.getElementById('launchTabContainer').style.display = 'none';
-                    document.getElementById('bookmarksTabContainer').style.display = 'none';
                     initAI();
                 } else if (currentTab === 'launches') {
                     document.getElementById('postsList').style.display = 'none';
                     document.getElementById('aiChatContainer').style.display = 'none';
                     document.getElementById('launchTabContainer').style.display = '';
-                    document.getElementById('bookmarksTabContainer').style.display = 'none';
                     renderLaunches();
-                } else if (currentTab === 'bookmarks') {
-                    document.getElementById('postsList').style.display = 'none';
-                    document.getElementById('aiChatContainer').style.display = 'none';
-                    document.getElementById('launchTabContainer').style.display = 'none';
-                    document.getElementById('bookmarksTabContainer').style.display = '';
-                    renderBookmarksTab();
                 } else {
                     document.getElementById('postsList').style.display = '';
                     document.getElementById('aiChatContainer').style.display = 'none';
                     document.getElementById('launchTabContainer').style.display = 'none';
-                    document.getElementById('bookmarksTabContainer').style.display = 'none';
                     renderPosts();
                 }
             });
@@ -5843,31 +5787,6 @@ if (typeof supabase === 'undefined') {
             const avatar = getAvatar(username);
             const avHtml = avatar.startsWith('http') ? '<img src="' + avatar + '" alt="avatar" loading="lazy" decoding="async">' : avatar;
             const badge = OFFICIAL_USERS[username] ? '<span class="badge-official">' + OFFICIAL_USERS[username].badge + '</span>' : '';
-            var bookmarksHtml = '';
-            if (currentUser && currentUser.name === username) {
-                var myBookmarks = getBookmarks();
-                var validBookmarks = [];
-                myBookmarks.forEach(function(bm) {
-                    var p = posts.find(function(pp) { return pp.id === bm.postId; });
-                    if (p) validBookmarks.push(p);
-                });
-                bookmarksHtml = '<div class="profile-posts"><div class="profile-posts-title">⭐ 我的收藏 (' + validBookmarks.length + ')</div>';
-                if (validBookmarks.length === 0) {
-                    bookmarksHtml += '<div style="padding:14px;color:var(--text-muted);font-size:0.85rem;">还没有收藏帖子，点击帖子中的「☆ 收藏」按钮即可收藏</div>';
-                } else {
-                    validBookmarks.forEach(function(post) {
-                        bookmarksHtml += '<div class="post-card" data-id="' + post.id + '" style="cursor:pointer;" onclick="closeProfileModal();scrollToPost(\'' + post.id + '\')">';
-                        bookmarksHtml += '<div class="post-header"><div class="post-author">';
-                        bookmarksHtml += '<div class="avatar">' + (post.avatar && post.avatar.startsWith('http') ? '<img src="' + escapeHtml(post.avatar) + '" alt="avatar" loading="lazy" decoding="async">' : (escapeHtml(post.avatar || '🌟'))) + '</div>';
-                        bookmarksHtml += '<div class="author-info"><span class="author-name" style="cursor:pointer;" onclick="event.stopPropagation();showUserProfile(\'' + escapeHtml(post.author) + '\')">' + escapeHtml(post.author) + '</span>';
-                        bookmarksHtml += '<span class="post-time">' + formatTime(post.time) + '</span></div></div></div>';
-                        if (post.title) bookmarksHtml += '<div class="post-title">' + escapeHtml(post.title) + '</div>';
-                        if (post.content) bookmarksHtml += '<div class="post-content">' + escapeHtml(post.content.substring(0, 120)) + (post.content.length > 120 ? '...' : '') + '</div>';
-                        bookmarksHtml += '</div>';
-                    });
-                }
-                bookmarksHtml += '</div>';
-            }
             var postsHtml = '';
             if (userPosts.length > 0) {
                 postsHtml = '<div class="profile-posts"><div class="profile-posts-title">TA的帖子 (' + userPosts.length + ')</div>';
@@ -5888,7 +5807,7 @@ if (typeof supabase === 'undefined') {
             } else {
                 postsHtml = '<div class="profile-posts"><div class="profile-posts-title">暂无帖子</div></div>';
             }
-            contentDiv.innerHTML = '<div class="profile-header"><div class="profile-avatar-large">' + avHtml + '</div><div class="profile-info"><div class="profile-name">' + escapeHtml(username) + ' ' + badge + '</div><div class="profile-stats"><div class="profile-stat"><span class="profile-stat-num">' + userPosts.length + '</span><span>帖子</span></div><div class="profile-stat"><span class="profile-stat-num">' + totalLikes + '</span><span>获赞</span></div></div></div></div>' + postsHtml + bookmarksHtml;
+            contentDiv.innerHTML = '<div class="profile-header"><div class="profile-avatar-large">' + avHtml + '</div><div class="profile-info"><div class="profile-name">' + escapeHtml(username) + ' ' + badge + '</div><div class="profile-stats"><div class="profile-stat"><span class="profile-stat-num">' + userPosts.length + '</span><span>帖子</span></div><div class="profile-stat"><span class="profile-stat-num">' + totalLikes + '</span><span>获赞</span></div></div></div></div>' + postsHtml;
             modal.classList.add('show');
         }
 
@@ -6181,7 +6100,7 @@ function stopNotifyMessageSystem() {
 }
 
 // ============================================================
-// 太空探索帖子网站 - 收藏/视频嵌入/发射结果记录功能
+// 太空探索帖子网站 - 视频嵌入/发射结果记录功能
 // 数据库: Supabase (客户端变量: sb)
 // 全局变量: currentUser, posts, launches, isOfficialUser, OFFICIAL_USERS
 // ============================================================
@@ -7251,71 +7170,6 @@ async function toggleBanUser(username) {
     } catch(e) {
         alert('操作失败: ' + e.message);
     }
-}
-// ==================== 收藏系统 ====================
-function getBookmarks() {
-    try { return JSON.parse(localStorage.getItem('space_bookmarks')) || []; } catch(e) { return []; }
-}
-function saveBookmarks(bm) {
-    localStorage.setItem('space_bookmarks', JSON.stringify(bm));
-}
-function isBookmarked(postId) {
-    var bookmarks = getBookmarks();
-    for (var i = 0; i < bookmarks.length; i++) { if (bookmarks[i].postId === postId) return true; }
-    return false;
-}
-function toggleBookmark(postId, postAuthor) {
-    if (!currentUser) { alert('请先登录后再收藏！'); openAuthModal(); return; }
-    var bookmarks = getBookmarks();
-    var idx = bookmarks.findIndex(function(b) { return b.postId === postId; });
-    if (idx >= 0) {
-        bookmarks.splice(idx, 1);
-        // Update button if visible
-        var btn = document.querySelector('.bookmark-btn[data-post-id="' + postId + '"]');
-        if (btn) { btn.textContent = '☆ 收藏'; btn.classList.remove('bookmarked'); }
-    } else {
-        bookmarks.push({ postId: postId, postAuthor: postAuthor, time: Date.now() });
-        var btn = document.querySelector('.bookmark-btn[data-post-id="' + postId + '"]');
-        if (btn) { btn.textContent = '⭐ 已收藏'; btn.classList.add('bookmarked'); }
-    }
-    saveBookmarks(bookmarks);
-    if (currentTab === 'bookmarks') renderBookmarksTab();
-}
-
-function removeBookmark(index) {
-    var bookmarks = getBookmarks();
-    bookmarks.splice(index, 1);
-    saveBookmarks(bookmarks);
-    if (currentTab === 'bookmarks') renderBookmarksTab();
-}
-
-function renderBookmarksTab() {
-    var panel = document.getElementById('bookmarksTabContainer');
-    if (!panel) return;
-    if (!currentUser) {
-        panel.innerHTML = '<div class="empty-state"><div class="emoji">🔒</div><p>请先登录后查看收藏</p></div>';
-        return;
-    }
-    var bookmarks = getBookmarks();
-    if (bookmarks.length === 0) {
-        panel.innerHTML = '<div class="empty-state"><div class="emoji">⭐</div><p>还没有收藏任何帖子<br><small style="color:var(--text-muted);">点击帖子中的「☆ 收藏」按钮即可收藏</small></p></div>';
-        return;
-    }
-    var html = '<div style="margin-bottom:12px;font-size:0.85rem;color:var(--text-muted);">共 ' + bookmarks.length + ' 个收藏</div>';
-    bookmarks.forEach(function(bm, i) {
-        var post = posts.find(function(p) { return p.id === bm.postId; });
-        if (!post) return;
-        html += '<div class="bookmark-post-item" onclick="scrollToPost(\'' + bm.postId + '\')">';
-        html += '<button class="bookmark-remove-btn" onclick="event.stopPropagation();removeBookmark(' + i + ')">✕</button>';
-        if (post.title) html += '<div class="bookmark-post-title">' + escapeHtml(post.title) + '</div>';
-        else html += '<div class="bookmark-post-title">无标题帖子</div>';
-        html += '<div class="bookmark-post-meta">';
-        html += '<span>👤 ' + escapeHtml(post.author) + '</span>';
-        html += '<span>❤️ ' + (post.likes || 0) + '</span>';
-        html += '<span>🕐 ' + formatTime(post.time) + '</span>';
-        html += '</div></div>';
-    });
-    panel.innerHTML = html;
 }
 function scrollToPost(postId) {
     if (typeof closeSpaceDataModal === 'function') closeSpaceDataModal();

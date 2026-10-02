@@ -68,6 +68,24 @@
             linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
         background-size: 64px 64px;
     }
+    .pointer-glow {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        height: 280px;
+        z-index: 1;
+        pointer-events: none;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(145, 180, 255, 0.16) 0%, rgba(115, 145, 235, 0.07) 32%, transparent 72%);
+        transform: translate3d(-50%, -50%, 0);
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        will-change: transform;
+    }
+    @media (hover: hover) and (pointer: fine) {
+        .pointer-glow { opacity: 1; }
+    }
     .wrap { position: relative; z-index: 2; width: 100%; max-width: 420px; }
     .card {
         position: relative;
@@ -160,12 +178,13 @@
 <body>
 <div class="bg-image"></div>
 <div class="bg-overlay"></div>
+<div class="pointer-glow" id="pointerGlow"></div>
 
 <main class="wrap">
     <div class="card">
         <div class="brand"><span class="dot"></span>SpaceHub 星枢</div>
         <h1>注册账号</h1>
-        <p class="sub">创建账号后即可发帖、点赞与收藏</p>
+        <p class="sub">创建账号后即可发帖与点赞</p>
 
         <div class="msg err" id="errBox"></div>
         <div class="msg ok" id="okBox"></div>
@@ -386,6 +405,28 @@ window.addEventListener('load', function () {
         }
     });
 });
+</script>
+<script>
+if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    var pointerGlow = document.getElementById('pointerGlow');
+    var glowX = window.innerWidth / 2;
+    var glowY = window.innerHeight / 2;
+    var targetX = glowX;
+    var targetY = glowY;
+    var glowFrame = null;
+    function movePointerGlow() {
+        glowX += (targetX - glowX) * 0.14;
+        glowY += (targetY - glowY) * 0.14;
+        pointerGlow.style.transform = 'translate3d(' + glowX + 'px, ' + glowY + 'px, 0) translate3d(-50%, -50%, 0)';
+        glowFrame = requestAnimationFrame(movePointerGlow);
+    }
+    window.addEventListener('mousemove', function(event) {
+        targetX = event.clientX;
+        targetY = event.clientY;
+        if (!glowFrame) glowFrame = requestAnimationFrame(movePointerGlow);
+    }, { passive: true });
+    glowFrame = requestAnimationFrame(movePointerGlow);
+}
 </script>
 </body>
 </html>
