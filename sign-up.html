@@ -216,9 +216,9 @@ var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 var HOME_URL = './';                 // 注册完成后跳回首页
 var REDIRECT_SECONDS = 5;            // 注册成功后等待秒数
 // Cloudflare Worker 地址（注册 + Turnstile 校验均由 Worker 完成）
-var WORKER_URL = 'https://spacehub-turnstile.your-subdomain.workers.dev/register';
+var WORKER_URL = 'https://spacehub-turnstile.polytrack1.workers.dev/register';
 // GET 模式下只校验 Turnstile token，不执行注册（供前端分步验证使用）
-var TURNSTILE_VERIFY_URL = 'https://spacehub-turnstile.your-subdomain.workers.dev/';
+var TURNSTILE_VERIFY_URL = 'https://spacehub-turnstile.polytrack1.workers.dev/';
 
 var sb = null;
 try {
@@ -311,11 +311,11 @@ async function registerViaWorker(name, password, token) {
     } catch (e) {
         throw new Error('无法连接注册服务，请检查网络后重试');
     }
-    if (!res.ok) throw new Error('注册服务响应异常，请稍后重试');
-    var data;
-    try { data = await res.json(); } catch (e) { throw new Error('注册服务返回异常，请稍后重试'); }
+    var data = null;
+    try { data = await res.json(); } catch (e) {}
     if (!data || data.success !== true) {
-        throw new Error(data && data.error ? data.error : '注册失败，请稍后重试');
+        if (data && data.error) throw new Error(data.error);
+        throw new Error(res.ok ? '注册服务返回异常，请稍后重试' : '注册服务响应异常（' + res.status + '），请稍后重试');
     }
     return true;
 }
