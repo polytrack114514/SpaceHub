@@ -15,8 +15,11 @@
 - 注册 Edge Function 位于 `supabase/functions/register/index.ts`。
 - 注册服务使用 Cloudflare Turnstile 服务端校验，Supabase 中配置了 `TURNSTILE_SECRET`。
 - 注册页增加了桌面端鼠标跟随高光，触摸设备不会启用该效果。
-- 首页已完整移除收藏功能：收藏页签、帖子收藏按钮、个人资料中的“我的收藏”、收藏面板和相关 localStorage/JavaScript 逻辑均已删除。
-- 点赞、评论、关注、发帖、火箭发射、太空数据中心和 AI 助手功能保留。
+- 首页已完整移除收藏和关注功能：收藏页签、帖子收藏按钮、个人资料中的“我的收藏”、收藏面板、关注入口、关注/粉丝统计及相关页面逻辑均不再提供。
+- 当前保留点赞、评论、消息通知、发帖、火箭发射、发射提醒、太空数据中心、NASA APOD、在线用户、图片灯箱和 AI 助手功能。
+- 太空数据中心当前包含 ISS 追踪、月相、近地小行星、ISS 乘组、流星雨、日食月食、发射任务和 NASA Eyes 3D 太阳系共 8 个面板。
+- 发射任务支持普通用户查看、官方账号维护、发射日期待定、结果标记、Agnes-AI 任务助手和发射提醒。
+- 注册页使用 Cloudflare Turnstile + Supabase Edge Function，并加入桌面端鼠标跟随高光。
 
 ## 最近提交
 
