@@ -26,7 +26,7 @@
 
 ### 📖 项目简介
 
-**SpaceHub 星枢** 是一个以太空探索为主题的社区平台，集帖子发布、评论互动、用户关注、火箭发射追踪、🛰️ 太空数据中心（ISS 实时定位 / 行星位置 / 月相 / 近地小行星 / ISS 乘组 / 流星雨 / 日食月食 / 帖子收藏）、NASA 每日天文一图、AI 太空助手于一体。采用深空配色与玻璃态设计，全面适配手机/平板/桌面。全部代码整合在单个 `index.html` 文件中，部署简单。
+**SpaceHub 星枢** 是一个以太空探索为主题的社区平台，集帖子发布、评论互动、用户关注、火箭发射追踪、🛰️ 太空数据中心（ISS 实时定位 / 行星位置 / 月相 / 近地小行星 / ISS 乘组 / 流星雨 / 日食月食）、NASA 每日天文一图、AI 太空助手于一体。采用深空配色与玻璃态设计，全面适配手机/平板/桌面。全部代码整合在单个 `index.html` 文件中，部署简单。
 
 ### 📁 项目结构
 
@@ -46,8 +46,7 @@ SpaceHub/
 | 💬 评论互动 | 需登录后发表，支持 @提及通知 |
 | 📌 置顶帖子 | 管理员可置顶重要帖子（Edge Function 验证密码）|
 | ❤️ 点赞 | 一键点赞（需登录），自动通知帖子作者 |
-| ⭐ 帖子收藏 | 收藏帖子方便日后查看，个人主页展示收藏列表 |
-| 👤 个人主页 | 展示用户头像/帖子/关注/粉丝/获赞/收藏，点击作者名可跳转 |
+| 👤 个人主页 | 展示用户头像/帖子/关注/粉丝/获赞，点击作者名可跳转 |
 | 👥 关注系统 | 关注/取消关注，用户主页显示关注数和粉丝数 |
 | 🔔 消息通知 | 点赞、评论、关注、@提及 实时通知 |
 | 🎬 视频嵌入 | 自动识别 YouTube 和 B站链接，嵌入视频播放器（autoplay 已禁用）|
@@ -76,7 +75,6 @@ SpaceHub/
 | ISS 乘组 | 当前在站宇航员名单及所属飞船 | 静态数据 |
 | 流星雨日历 | 全年 10 大流星雨，峰值日期、ZHR、活跃期、辐射点 | 静态数据集 |
 | 日食月食 | 2026-2028 年日食月食预报，食分、可见区域、倒计时 | 静态数据集 |
-| ⭐ 收藏 | 个人收藏帖子列表，点击跳转原帖，个人主页同步展示 | localStorage 本地存储 |
 
 ### 🛠️ 技术栈
 
@@ -135,7 +133,7 @@ SpaceHub/
 ├──────────────────────────────────────────────┤
 │  🔥 热门  🆕 最新  👥 关注  🤖 AI助手         │
 │  ┌──────────────────────────────────────────┐ │
-│  │ 👤 NASA  🏛️  2小时前     ☆收藏  ⋯     │ │
+│  │ 👤 NASA  🏛️  2小时前             ⋯     │ │
 │  │ NASA 发现新行星                            │ │
 │  │ [配图]                                    │ │
 │  │ ❤️ 42   💬 8                              │ │
@@ -143,7 +141,7 @@ SpaceHub/
 ├──────────────────────────────────────────────┤
 │  🛰️ 太空数据中心 (扫描线动效)                  │
 │  [ISS追踪][行星位置][月相][近地小行星]         │
-│  [ISS乘组][流星雨][日食月食][⭐收藏]          │
+│  [ISS乘组][流星雨][日食月食]                  │
 │  🟢 在线: 12 人  🌌 NASA APOD               │
 └──────────────────────────────────────────────┘
 ```
@@ -158,7 +156,7 @@ SpaceHub/
 
 ### 📖 About
 
-**SpaceHub** is a space-themed community platform integrating post publishing, comments, user following, rocket launch tracking, 🛰️ Space Data Center (ISS tracking / planet positions / moon phase / NEO asteroids / ISS crew / meteor showers / eclipses / bookmarks), NASA APOD, and an AI space assistant. Features a deep-space color palette with glassmorphism design, fully responsive for mobile/tablet/desktop. All code is combined in a single `index.html` file for easy deployment.
+**SpaceHub** is a space-themed community platform integrating post publishing, comments, user following, rocket launch tracking, 🛰️ Space Data Center (ISS tracking / planet positions / moon phase / NEO asteroids / ISS crew / meteor showers / eclipses), NASA APOD, and an AI space assistant. Features a deep-space color palette with glassmorphism design, fully responsive for mobile/tablet/desktop. All code is combined in a single `index.html` file for easy deployment.
 
 ### 📁 Project Structure
 
@@ -178,8 +176,7 @@ SpaceHub/
 | 💬 Comments | Login required, @mention notifications |
 | 📌 Pin | Admins can pin posts (Edge Function password verification) |
 | ❤️ Likes | One-click like (login required), auto-notification to author |
-| ⭐ Bookmarks | Bookmark posts for later, shown in profile page |
-| 👤 Profile | User avatar/posts/following/followers/likes/bookmarks, click author to view |
+| 👤 Profile | User avatar/posts/following/followers/likes, click author to view |
 | 👥 Follow | Follow/unfollow users, profile shows following/follower counts |
 | 🔔 Notifications | Real-time notifications for likes, comments, follows, mentions |
 | 🎬 Video Embed | Auto-detects YouTube and Bilibili links (autoplay disabled) |
@@ -208,7 +205,6 @@ SpaceHub/
 | ISS Crew | Current in-station astronauts and spacecraft | Static data |
 | Meteor Showers | Annual 10 major meteor showers, peak date, ZHR, radiant, period | Static dataset |
 | Eclipses | 2026-2028 solar/lunar eclipse predictions, magnitude, visibility, countdown | Static dataset |
-| ⭐ Bookmarks | Personal bookmarked posts list, click to jump, synced with profile | localStorage |
 
 ### 🛠️ Tech Stack
 
@@ -267,7 +263,7 @@ SpaceHub/
 ├──────────────────────────────────────────────┤
 │  🔥 Hot  🆕 New  👥 Following  🤖 AI         │
 │  ┌──────────────────────────────────────────┐ │
-│  │ 👤 NASA  🏛️  2h ago     ☆Bookmark  ⋯  │ │
+│  │ 👤 NASA  🏛️  2h ago                 ⋯  │ │
 │  │ NASA Discovers New Planet                  │ │
 │  │ [Image]                                    │ │
 │  │ ❤️ 42   💬 8                              │ │
@@ -275,7 +271,7 @@ SpaceHub/
 ├──────────────────────────────────────────────┤
 │  🛰️ Space Data Center (scanline effect)       │
 │  [ISS][Moon][Asteroids]              │
-│  [Crew][Meteors][Eclipses][⭐Bookmarks]      │
+│  [Crew][Meteors][Eclipses]                 │
 │  🟢 Online: 12  🌌 NASA APOD                 │
 └──────────────────────────────────────────────┘
 ```
