@@ -215,10 +215,8 @@ var SUPABASE_URL = 'https://tktfrrvaqwbtdhiqwnna.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdGZycnZhcXdidGRoaXF3bm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzcyMjYsImV4cCI6MjEwMTMxMzIyNn0.CYNPqmQUrnkMFUq-Bkd_09q7CjQ8rZlNX5brb5-UrbQ';
 var HOME_URL = './';                 // 注册完成后跳回首页
 var REDIRECT_SECONDS = 5;            // 注册成功后等待秒数
-// Cloudflare Worker 地址（注册 + Turnstile 校验均由 Worker 完成）
-var WORKER_URL = 'https://spacehub-turnstile.polytrack1.workers.dev/register';
-// GET 模式下只校验 Turnstile token，不执行注册（供前端分步验证使用）
-var TURNSTILE_VERIFY_URL = 'https://spacehub-turnstile.polytrack1.workers.dev/';
+// 注册服务地址（Supabase Edge Function：Turnstile 服务端校验 + service_role 注册）
+var REGISTER_URL = 'https://tktfrrvaqwbtdhiqwnna.supabase.co/functions/v1/register';
 
 var sb = null;
 try {
@@ -274,38 +272,22 @@ function resetTurnstile() {
     try { if (window.turnstile) window.turnstile.reset(); } catch (e) {}
 }
 
-// ==================== 服务端校验 Turnstile 令牌 ====================
-// GET 模式：只校验 token，返回 {success:true/false}
-async function verifyTurnstileServer(token) {
-    if (!TURNSTILE_VERIFY_URL || /your-subdomain/.test(TURNSTILE_VERIFY_URL)) {
-        throw new Error('人机验证服务未配置，请联系管理员');
-    }
-    var sep = TURNSTILE_VERIFY_URL.indexOf('?') === -1 ? '?' : '&';
-    var url = TURNSTILE_VERIFY_URL + sep + 'token=' + encodeURIComponent(token);
-    var res;
-    try {
-        res = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
-    } catch (e) {
-        throw new Error('无法连接人机验证服务，请检查网络后重试');
-    }
-    if (!res.ok) throw new Error('人机验证校验失败，请重试');
-    var data;
-    try { data = await res.json(); } catch (e) { throw new Error('人机验证返回异常，请重试'); }
-    if (!data || data.success !== true) throw new Error('人机验证未通过，请重试');
-    return true;
-}
-
-// ==================== 向 Worker 发送完整注册请求 ====================
+// ==================== 调用注册服务（Supabase Edge Function） ====================
 // POST 模式：一次性完成 Turnstile 校验 + 注册，全程不暴露 service_role key
-async function registerViaWorker(name, password, token) {
-    if (!WORKER_URL || /your-subdomain/.test(WORKER_URL)) {
+async function registerViaServer(name, password, token) {
+    if (!REGISTER_URL) {
         throw new Error('注册服务未配置，请联系管理员');
     }
     var res;
     try {
-        res = await fetch(WORKER_URL, {
+        res = await fetch(REGISTER_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'apikey': SUPABASE_KEY,
+                'Authorization': 'Bearer ' + SUPABASE_KEY
+            },
             body: JSON.stringify({ name: name, password: password, token: token })
         });
     } catch (e) {
@@ -366,9 +348,9 @@ async function doSignup() {
             return;
         }
 
-        // 通过 Worker 一次性完成 Turnstile 校验 + 注册（service_role key 在 Worker 内，前端不可见）
+        // 通过 Edge Function 一次性完成 Turnstile 校验 + 注册（service_role key 在服务端，前端不可见）
         btn.textContent = '验证中…';
-        await registerViaWorker(name, pwd, turnstileToken);
+        await registerViaServer(name, pwd, turnstileToken);
         btn.textContent = '注册成功';
         startCountdown();
     } catch (e) {
