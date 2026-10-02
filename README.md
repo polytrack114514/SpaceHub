@@ -37,7 +37,6 @@ SpaceHub/
 ├── supabase/functions/register/       # 注册 Edge Function
 ├── worker.js                          # 历史 Worker 代码，当前注册页不再调用
 ├── favicon.png                        # 网站图标
-├── MEMORY.md                          # 项目维护记忆
 └── README.md                          # 项目说明文档
 ```
 
@@ -164,7 +163,6 @@ SpaceHub/
 ├── supabase/functions/register/       # Registration Edge Function
 ├── worker.js                          # Legacy Worker code; signup no longer calls it
 ├── favicon.png                        # Site icon
-├── MEMORY.md                          # Project maintenance memory
 └── README.md                          # Project documentation
 ```
 
