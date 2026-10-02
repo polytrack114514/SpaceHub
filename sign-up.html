@@ -185,12 +185,10 @@
                 <input type="password" id="confirm" placeholder="再输入一次密码" autocomplete="new-password">
             </div>
 
-            <!-- Cloudflare Turnstile 人机验证
-                 注意：下面的 data-sitekey 目前是 Cloudflare 官方「始终放行」测试 key，会显示“仅用于测试”。
-                 请到 Cloudflare 面板 → Turnstile 新建站点，把 site key 换成你自己的（Secret Key 不要放前端）。 -->
+            <!-- Cloudflare Turnstile 人机验证（Site key 为公开值；Secret key 只放服务端，不要写进前端） -->
             <div class="cf-wrap">
                 <div class="cf-turnstile"
-                     data-sitekey="1x00000000000000000000AA"
+                     data-sitekey="0x4AAAAAAFLiahhL370qCXNl"
                      data-theme="dark"
                      data-language="zh-cn"
                      data-callback="onTurnstileSuccess"
