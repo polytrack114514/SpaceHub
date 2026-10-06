@@ -29,9 +29,7 @@ CREATE POLICY sessions_service_all ON sessions FOR ALL TO service_role USING (tr
 -- 4. site_settings 补 updated_at 列
 ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
--- 5. verify_user_login RPC（校验 users 表）
--- 注意：users.password 存储的是明文密码的 SHA-256 十六进制摘要，
---       前端提交的是明文，故此处对输入做 sha256 后再比对。
+-- 5. verify_user_login RPC（校验 users 表，明文密码比对）
 CREATE OR REPLACE FUNCTION public.verify_user_login(p_name TEXT, p_password TEXT)
 RETURNS JSON AS $fn$
 DECLARE
@@ -45,7 +43,7 @@ BEGIN
     ) INTO r
     FROM users
     WHERE name = p_name
-      AND password = encode(sha256(p_password::bytea), 'hex')
+      AND password = p_password
     LIMIT 1;
     RETURN r;
 END;

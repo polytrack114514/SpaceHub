@@ -57,16 +57,10 @@ serve(async (req: Request) => {
     const { data: existing } = await sb.from('users').select('id').eq('name', userName).single()
     if (existing) return jsonResponse({ ok: false, error: '用户名已被注册' }, 409)
 
-    // 计算 SHA-256 哈希（与 verify_user_login 一致）
-    const encoder = new TextEncoder()
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password))
-    const passwordHash = Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('')
-
+    // 明文存储密码
     const { error: insertErr } = await sb.from('users').insert({
       name: userName,
-      password: passwordHash,
+      password: password,
       role: 'user',
       banned: false,
       avatar: '',

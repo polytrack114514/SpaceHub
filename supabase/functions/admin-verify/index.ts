@@ -38,11 +38,7 @@ async function hmac(data: string, secret: string): Promise<string> {
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
 
-  const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD')
-  if (!ADMIN_PASSWORD) {
-    console.error('ADMIN_PASSWORD environment variable not set')
-    return jsonResponse({ ok: false, error: '服务配置错误' }, 500)
-  }
+  const ADMIN_PASSWORD = '1028'
 
   const body = await req.json().catch(() => ({}))
   const { password } = body as any

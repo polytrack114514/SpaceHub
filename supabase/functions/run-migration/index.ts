@@ -193,13 +193,7 @@ serve(async (req: Request) => {
         })
       }
 
-      // SHA-256 哈希
-      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password))
-      const passwordHash = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')
-
-      // 插入新用户
+      // 明文存储密码
       const insertResp = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
         method: 'POST',
         headers: {
@@ -208,7 +202,7 @@ serve(async (req: Request) => {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        body: JSON.stringify({ name: userName, password: passwordHash, role: 'user', banned: false, avatar: '' })
+        body: JSON.stringify({ name: userName, password: password, role: 'user', banned: false, avatar: '' })
       })
       const insertData = await insertResp.json().catch(() => ({}))
       if (!insertResp.ok) {

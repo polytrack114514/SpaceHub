@@ -50,18 +50,12 @@ serve(async (req: Request) => {
     return jsonResponse({ ok: false, error: '用户名已被注册' }, 409)
   }
 
-  // 计算 SHA-256 哈希
-  const encoder = new TextEncoder()
-  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password))
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-
-  // 插入新用户（使用 service_role 绕过 RLS）
+  // 明文存储密码
   const { error: insertErr } = await sb
     .from('users')
     .insert({
       name: userName,
-      password: passwordHash,
+      password: password,
       role: 'user',
       banned: false,
       avatar: '',
