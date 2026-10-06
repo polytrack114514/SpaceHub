@@ -3306,7 +3306,7 @@ hr, .divider {
 .ai-chat-header .ai-clear:hover {
     color: #ff4060; border-color: rgba(255, 64, 96, 0.3);
 }
-.ai-messages { flex: 1; overflow-y: auto; padding: 16px; }
+.ai-messages { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
 .ai-messages::-webkit-scrollbar { width: 4px; }
 .ai-messages::-webkit-scrollbar-thumb { background: rgba(91, 143, 255, 0.2); border-radius: 4px; }
 .ai-msg { display: flex; margin-bottom: 16px; gap: 10px; }
@@ -3926,9 +3926,6 @@ hr, .divider {
             /* Planet info */            /* AI chat */
             .ai-chat-wrap {
                 padding: 10px !important;
-            }
-            .ai-messages {
-                max-height: 300px !important;
             }
             .ai-input { font-size: 0.85rem !important; }
             .ai-send { font-size: 0.8rem !important; padding: 8px 14px !important; }
