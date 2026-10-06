@@ -91,7 +91,8 @@ async function sendAIMessage() {
         if (!response.ok) throw new Error('API ' + response.status);
         var data = await response.json();
         if (data.error) throw new Error(data.error);
-        var reply = data.content;
+        var reply = data.content || data.message || data.response || '';
+        if (!reply) throw new Error('AI 未返回有效内容');
 
         hideAITyping();
         aiMessages.push({ role: 'assistant', content: reply });
