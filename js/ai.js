@@ -41,11 +41,23 @@ function renderAIMessages() {
         if (msg.role === 'user') {
             html += '<div class="ai-msg user"><div class="ai-msg-bubble">' + escapeHtml(msg.content) + '</div></div>';
         } else {
-            html += '<div class="ai-msg assistant"><div class="ai-avatar">\ud83e\udd16</div><div class="ai-msg-bubble">' + formatAIResponse(msg.content) + '</div></div>';
+            var formatted = formatAIResponse(msg.content);
+            if (formatted.length > 1500) formatted = formatted.substring(0, 1500) + '<span class="ai-more">…点击展开全文</span>';
+            html += '<div class="ai-msg assistant"><div class="ai-avatar">\ud83e\udd16</div><div class="ai-msg-bubble ai-bubble-long">' + formatted + '</div></div>';
         }
     }
     container.innerHTML = html;
-    container.scrollTop = container.scrollHeight;
+    requestAnimationFrame(function() {
+        container.scrollTop = container.scrollHeight;
+    });
+    var moreSpans = container.querySelectorAll('.ai-more');
+    for (var m = 0; m < moreSpans.length; m++) {
+        moreSpans[m].addEventListener('click', function() {
+            var bubble = this.closest('.ai-msg-bubble');
+            if (bubble) bubble.classList.toggle('expanded');
+            this.style.display = 'none';
+        });
+    }
 }
 
 function showAITyping() {
