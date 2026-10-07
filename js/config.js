@@ -64,7 +64,8 @@ function clearSessionToken() {
 /* ---------- 获取 Authorization header ---------- */
 function getAuthHeaders() {
     const token = getSessionToken();
-    return token ? { 'Authorization': 'Bearer ' + token } : {};
+    if (token) return { 'Authorization': 'Bearer ' + token };
+    return { 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY };
 }
 
 /* ---------- 通用 fetch → Edge Function ---------- */
