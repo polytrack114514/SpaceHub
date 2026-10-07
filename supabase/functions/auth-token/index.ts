@@ -18,6 +18,12 @@ function jsonResponse(body: unknown, status = 200) {
   })
 }
 
+async function sha256Hex(text: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const hash = await crypto.subtle.digest('SHA-256', encoder.encode(text))
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 async function verifyToken(req: Request): Promise<{ userName: string } | null> {
   const authHeader = req.headers.get('Authorization') || ''
   const token = authHeader.replace('Bearer ', '')
@@ -41,7 +47,7 @@ serve(async (req: Request) => {
   const body = await req.json().catch(() => ({}))
   const { action, name, password } = body as any
 
-  // action=register: 注册新用户
+  // action=register: 注册新用户，明文存储密码
   if (action === 'register') {
     const { name, password, confirm_password } = body as any
     if (!name || !password) return jsonResponse({ ok: false, error: '用户名和密码不能为空' }, 400)
@@ -53,11 +59,9 @@ serve(async (req: Request) => {
 
     const userName = name.trim()
 
-    // 检查用户名是否已存在
     const { data: existing } = await sb.from('users').select('id').eq('name', userName).single()
     if (existing) return jsonResponse({ ok: false, error: '用户名已被注册' }, 409)
 
-    // 明文存储密码
     const { error: insertErr } = await sb.from('users').insert({
       name: userName,
       password: password,
@@ -73,18 +77,27 @@ serve(async (req: Request) => {
   }
 
   // action=issue: 校验用户名密码并签发 session token
+  // 支持明文密码和 SHA-256 哈希密码两种格式
   if (action === 'issue') {
     if (!name || !password) return jsonResponse({ ok: false, error: '用户名和密码不能为空' }, 400)
 
-    // 调用 verify_user_login RPC（由数据库定义，校验密码）
-    const { data: rawLogin, error: rpcErr } = await sb.rpc('verify_user_login', {
-      p_name: name,
-      p_password: password,
-    })
-    let loginData = rawLogin
-    if (Array.isArray(loginData)) loginData = loginData[0]
-    if (rpcErr || !loginData) return jsonResponse({ ok: false, error: '用户名或密码错误' }, 401)
-    if (loginData.banned) return jsonResponse({ ok: false, error: '该账号已被禁言' }, 403)
+    const hashed = await sha256Hex(password)
+
+    // 查询用户，同时匹配明文密码和 SHA-256 哈希
+    const { data: user, error: queryErr } = await sb
+      .from('users')
+      .select('name, avatar, banned, role, password')
+      .eq('name', name)
+      .single()
+
+    if (queryErr || !user) return jsonResponse({ ok: false, error: '用户名或密码错误' }, 401)
+
+    // 允许明文或 SHA-256 哈希密码
+    if (user.password !== password && user.password !== hashed) {
+      return jsonResponse({ ok: false, error: '用户名或密码错误' }, 401)
+    }
+
+    if (user.banned) return jsonResponse({ ok: false, error: '该账号已被禁言' }, 403)
 
     // 生成 token
     const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
@@ -93,7 +106,7 @@ serve(async (req: Request) => {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
     const { error: insertErr } = await sb.from('sessions').insert({
-      user_name: loginData.name,
+      user_name: user.name,
       token,
       expires_at: expiresAt,
     })
@@ -101,6 +114,7 @@ serve(async (req: Request) => {
       console.error('insert session error:', insertErr)
       return jsonResponse({ ok: false, error: '签发失败，请重试' }, 500)
     }
+
     return jsonResponse({ ok: true, token, expires_at: expiresAt })
   }
 
