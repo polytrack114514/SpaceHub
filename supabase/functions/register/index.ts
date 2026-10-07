@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const TURNSTILE_SECRET_KEY = Deno.env.get('TURNSTILE_SECRET_KEY') || ''
 const sb = createClient(supabaseUrl, supabaseServiceKey)
 
 const CORS_HEADERS = {
@@ -18,23 +19,47 @@ function jsonResponse(body: unknown, status = 200) {
   })
 }
 
+async function verifyTurnstile(token: string): Promise<boolean> {
+  if (!TURNSTILE_SECRET_KEY || !token) return false
+  try {
+    const form = new FormData()
+    form.append('secret', TURNSTILE_SECRET_KEY)
+    form.append('response', token)
+    const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      body: form,
+    })
+    const data = await resp.json()
+    return !!data.success
+  } catch (e) {
+    console.error('turnstile verify error:', e)
+    return false
+  }
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
 
   const body = await req.json().catch(() => ({}))
-  const { name, password, confirm_password } = body as any
+  const { name, password, confirm_password, token } = body as any
+
+  // Turnstile 人机验证（有 secret key 时才强制校验）
+  if (TURNSTILE_SECRET_KEY) {
+    const valid = await verifyTurnstile(token)
+    if (!valid) return jsonResponse({ success: false, error: '请完成人机验证' }, 400)
+  }
 
   if (!name || !password) {
-    return jsonResponse({ ok: false, error: '用户名和密码不能为空' }, 400)
+    return jsonResponse({ success: false, error: '用户名和密码不能为空' }, 400)
   }
   if (typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 20) {
-    return jsonResponse({ ok: false, error: '用户名需2-20个字符' }, 400)
+    return jsonResponse({ success: false, error: '用户名需2-20个字符' }, 400)
   }
   if (password.length < 6) {
-    return jsonResponse({ ok: false, error: '密码至少6位' }, 400)
+    return jsonResponse({ success: false, error: '密码至少6位' }, 400)
   }
   if (password !== confirm_password) {
-    return jsonResponse({ ok: false, error: '两次密码不一致' }, 400)
+    return jsonResponse({ success: false, error: '两次密码不一致' }, 400)
   }
 
   const userName = name.trim()
@@ -47,7 +72,7 @@ serve(async (req: Request) => {
     .single()
 
   if (existing) {
-    return jsonResponse({ ok: false, error: '用户名已被注册' }, 409)
+    return jsonResponse({ success: false, error: '用户名已被注册' }, 409)
   }
 
   // 明文存储密码
@@ -63,8 +88,8 @@ serve(async (req: Request) => {
 
   if (insertErr) {
     console.error('register insert error:', insertErr)
-    return jsonResponse({ ok: false, error: '注册失败，请重试' }, 500)
+    return jsonResponse({ success: false, error: '注册失败，请重试' }, 500)
   }
 
-  return jsonResponse({ ok: true })
+  return jsonResponse({ success: true })
 })
