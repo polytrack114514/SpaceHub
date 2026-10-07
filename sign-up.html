@@ -137,6 +137,10 @@
         box-shadow: var(--lg-inset), 0 0 0 3px rgba(255, 255, 255, 0.10), 0 0 22px rgba(255, 255, 255, 0.12);
     }
     .hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 6px; }
+    /* 显示密码开关：方便核对两次输入是否一致 */
+    .show-pwd { display: flex; align-items: center; gap: 7px; font-size: 0.8rem;
+        color: var(--text-secondary); margin: 2px 0 12px; cursor: pointer; user-select: none; }
+    .show-pwd input { width: 15px; height: 15px; accent-color: #5b8fff; cursor: pointer; }
 
     /* Cloudflare Turnstile 人机验证 */
     .cf-wrap { margin: 18px 0 2px; display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 68px; }
@@ -203,6 +207,7 @@
                 <label for="confirm">确认密码</label>
                 <input type="password" id="confirm" placeholder="再输入一次密码" autocomplete="new-password">
             </div>
+            <label class="show-pwd"><input type="checkbox" id="showPwd" onchange="toggleShowPwd(this.checked)"> 显示密码</label>
 
             <!-- Cloudflare Turnstile 人机验证（Site key 为公开值；Secret key 只放服务端，不要写进前端） -->
             <div class="cf-wrap">
@@ -255,6 +260,13 @@ function showErr(msg) {
 function showOk(msg) {
     var el = byId('okBox'); el.textContent = msg; el.classList.add('show');
     byId('errBox').classList.remove('show');
+}
+// 切换两个密码框的明文/密文显示，便于核对
+function toggleShowPwd(on) {
+    var t = on ? 'text' : 'password';
+    var p = byId('password'), c = byId('confirm');
+    if (p) p.type = t;
+    if (c) c.type = t;
 }
 
 // ==================== Cloudflare Turnstile 回调 ====================
