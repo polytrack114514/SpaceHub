@@ -43,6 +43,7 @@
         }
         .back-link:hover { color: var(--accent-blue); }
 
+        /* 登录弹窗 */
         .auth-modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.6);
@@ -141,7 +142,7 @@
             <button class="auth-submit" id="authSubmitBtn" onclick="handleRegister()">注册</button>
             <div class="auth-switch">
                 <span>已有账号？</span>
-                <a href="./index.html">去登录</a>
+                <a onclick="window.location.href='./index.html'">去登录</a>
             </div>
             <button class="auth-close" onclick="window.location.href='./index.html'">&times;</button>
         </div>
@@ -196,6 +197,7 @@
             }
         }
 
+        // 自动聚焦用户名输入框
         setTimeout(function() { document.getElementById('authUsername').focus(); }, 100);
     </script>
 </body>
