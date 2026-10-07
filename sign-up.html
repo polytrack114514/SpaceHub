@@ -8,13 +8,9 @@
     <style>
         :root {
             --bg: #060814;
-            --surface: rgba(14, 18, 36, 0.75);
             --text-primary: #dce8ff;
-            --text-secondary: #6888b8;
             --text-muted: #3a4868;
             --accent-blue: #5b8fff;
-            --border: rgba(91, 143, 255, 0.14);
-            --border-focus: rgba(91, 143, 255, 0.45);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -42,163 +38,19 @@
             font-size: 0.85rem; transition: color 0.2s;
         }
         .back-link:hover { color: var(--accent-blue); }
-
-        /* 登录弹窗 */
-        .auth-modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            z-index: 150;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .auth-modal {
-            background: #0f0f0f; border-radius: 20px;
-            padding: 36px; width: 90%; max-width: 400px;
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            position: relative;
-        }
-        .auth-modal h2 {
-            font-size: 1.3rem; margin-bottom: 24px;
-            text-align: center; color: var(--text-primary);
-        }
-        .auth-field { margin-bottom: 16px; }
-        .auth-field label {
-            display: block; font-size: 0.82rem;
-            color: var(--text-secondary); margin-bottom: 6px;
-        }
-        .auth-field input {
-            width: 100%; padding: 12px 14px;
-            background: #1a1a1a;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 0.9rem; font-family: inherit; outline: none;
-        }
-        .auth-field input:focus { border-color: var(--border-focus); }
-        .auth-field input::placeholder { color: var(--text-muted); }
-        .auth-submit {
-            width: 100%; padding: 12px;
-            background: #ffffff; color: #000000;
-            border: none; border-radius: 12px;
-            font-size: 0.92rem; font-weight: 600;
-            cursor: pointer; font-family: inherit;
-            transition: background 0.25s, opacity 0.25s; margin-top: 8px;
-        }
-        .auth-submit:hover { background: #e0e0e0; }
-        .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; }
-        .auth-switch {
-            text-align: center; margin-top: 16px;
-            font-size: 0.82rem; color: var(--text-muted);
-        }
-        .auth-switch a {
-            color: var(--accent-blue); cursor: pointer; text-decoration: none;
-        }
-        .auth-switch a:hover { text-decoration: underline; }
-        .auth-error {
-            background: rgba(255,85,85,0.1);
-            border: 1px solid rgba(255,85,85,0.2);
-            border-radius: 10px; padding: 10px 14px;
-            color: #ff8888; font-size: 0.82rem;
-            margin-bottom: 16px; display: none;
-        }
-        .auth-error.show { display: block; }
-        .auth-success {
-            background: rgba(100,255,100,0.1);
-            border: 1px solid rgba(100,255,100,0.2);
-            border-radius: 10px; padding: 10px 14px;
-            color: #88ff88; font-size: 0.82rem;
-            margin-bottom: 16px; display: none;
-        }
-        .auth-success.show { display: block; }
-        .auth-close {
-            position: absolute; top: 12px; right: 16px;
-            background: transparent; border: none;
-            color: var(--text-muted); font-size: 1.2rem; cursor: pointer;
+        .hint {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <a class="back-link" href="./index.html">← 返回首页</a>
     <a class="logo" href="./index.html">SpaceHub 星枢</a>
-
-    <div class="auth-modal-overlay" id="authModal">
-        <div class="auth-modal">
-            <h2 id="authTitle">注册账号</h2>
-            <div class="auth-error" id="authError"></div>
-            <div class="auth-success" id="authSuccess"></div>
-            <div class="auth-field">
-                <label>用户名</label>
-                <input type="text" id="authUsername" placeholder="起一个用户名（2-20个字符）" maxlength="20" autocomplete="username">
-            </div>
-            <div class="auth-field">
-                <label>密码</label>
-                <input type="password" id="authPassword" placeholder="密码（至少6位）" autocomplete="new-password">
-            </div>
-            <div class="auth-field">
-                <label>确认密码</label>
-                <input type="password" id="authConfirm" placeholder="再输入一次密码" autocomplete="new-password">
-            </div>
-            <button class="auth-submit" id="authSubmitBtn" onclick="handleRegister()">注册</button>
-            <div class="auth-switch">
-                <span>已有账号？</span>
-                <a onclick="window.location.href='./index.html'">去登录</a>
-            </div>
-            <button class="auth-close" onclick="window.location.href='./index.html'">&times;</button>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
+    <div class="hint">注册功能请在主页进行</div>
     <script>
-        const SUPABASE_URL = 'https://tktfrrvaqwbtdhiqwnna.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdGZycnZhcXdiZGRoaXF3bm5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3MzcyMjYsImV4cCI6MjEwMTMxMzIyNn0.CYNPqmQUrnkMFUq-Bkd_09q7CjQ8rZlNX5brb5-UrbQ';
-        const EDGE_BASE = SUPABASE_URL + '/functions/v1';
-
-        function showErr(msg) {
-            var el = document.getElementById('authError');
-            el.textContent = msg;
-            el.classList.add('show');
-            document.getElementById('authSuccess').classList.remove('show');
-        }
-        function showSuc(msg) {
-            var el = document.getElementById('authSuccess');
-            el.textContent = msg;
-            el.classList.add('show');
-            document.getElementById('authError').classList.remove('show');
-        }
-
-        async function handleRegister() {
-            var username = document.getElementById('authUsername').value.trim();
-            var password = document.getElementById('authPassword').value;
-            var confirm = document.getElementById('authConfirm').value;
-            var btn = document.getElementById('authSubmitBtn');
-            document.getElementById('authError').classList.remove('show');
-            document.getElementById('authSuccess').classList.remove('show');
-            if (!username || username.length < 2) { showErr('用户名需2-20个字符'); return; }
-            if (username.length > 20) { showErr('用户名需2-20个字符'); return; }
-            if (!password || password.length < 6) { showErr('密码至少6位'); return; }
-            if (password !== confirm) { showErr('两次密码不一致'); return; }
-            btn.disabled = true;
-            btn.textContent = '请稍候...';
-            try {
-                var res = await fetch(EDGE_BASE + '/auth-token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'register', name: username, password: password, confirm_password: confirm })
-                });
-                var result = await res.json();
-                if (!result.ok) { showErr(result.error || '注册失败'); btn.disabled = false; btn.textContent = '注册'; return; }
-                showSuc('注册成功！正在跳转到登录页...');
-                setTimeout(function() { window.location.href = './index.html'; }, 1500);
-            } catch (e) {
-                showErr('注册失败: ' + e.message);
-                btn.disabled = false;
-                btn.textContent = '注册';
-            }
-        }
-
-        // 自动聚焦用户名输入框
-        setTimeout(function() { document.getElementById('authUsername').focus(); }, 100);
+        window.location.href = './index.html';
     </script>
 </body>
 </html>
