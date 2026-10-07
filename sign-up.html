@@ -304,7 +304,8 @@ async function registerViaServer(name, password, token) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'apikey': SUPABASE_KEY,
+                // 只发送 Authorization（Bearer anon key）；不发送 apikey 头，
+                // 否则会触发浏览器 CORS 预检失败
                 'Authorization': 'Bearer ' + SUPABASE_KEY
             },
             body: JSON.stringify({ name: name, password: password, token: token })

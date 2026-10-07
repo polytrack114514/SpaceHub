@@ -524,7 +524,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
         if (currentTab === 'ai') {
             if (postsList) postsList.style.display = 'none';
             if (launchContainer) launchContainer.style.display = 'none';
-            if (aiContainer) { aiContainer.style.display = 'block'; initAI(); }
+            if (aiContainer) { aiContainer.style.display = 'flex'; initAI(); }
         } else if (currentTab === 'launches') {
             if (postsList) postsList.style.display = 'none';
             if (aiContainer) aiContainer.style.display = 'none';

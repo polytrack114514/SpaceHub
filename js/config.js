@@ -65,7 +65,9 @@ function clearSessionToken() {
 function getAuthHeaders() {
     const token = getSessionToken();
     if (token) return { 'Authorization': 'Bearer ' + token };
-    return { 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY, 'apikey': SUPABASE_ANON_KEY };
+    // 未登录时用 anon key 作为 Authorization；不要额外发送 apikey 头，
+    // 否则会触发浏览器 CORS 预检失败（Edge Function 未在 allow-headers 中声明 apikey）
+    return { 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
 }
 
 /* ---------- 通用 fetch → Edge Function ---------- */

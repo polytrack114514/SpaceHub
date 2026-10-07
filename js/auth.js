@@ -41,7 +41,7 @@ window.renderAuthArea = function() {
     } else {
         area.innerHTML =
             '<button class="btn-auth" onclick="openAuthModal()">登录</button>'
-            + '<button class="btn-auth" onclick="openAuthModal(true)">注册</button>';
+            + '<button class="btn-auth" onclick="window.location.href=\'./sign-up.html\'">注册</button>';
     }
 };
 
