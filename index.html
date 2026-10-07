@@ -4557,7 +4557,7 @@ if (typeof supabase === 'undefined') {
                                     <button class="notify-btn" onclick="openSpaceDataModal()" title="太空数据" style="margin-left:4px;">🛰️</button>
                         <div class="auth-area" id="authArea">
                 <button class="btn-auth" onclick="openAuthModal()">登录</button>
-                <button class="btn-auth" onclick="openAuthModal(true)">注册</button>
+                <button class="btn-auth" onclick="window.location.href='./sign-up.html'">注册</button>
             </div>
             <button class="admin-btn-entry" id="adminEntryBtn" onclick="openAdminModal()">⚙ 管理</button>
             <button class="fab-post" onclick="openModal()">✨ 发布帖子</button>
@@ -4647,7 +4647,7 @@ if (typeof supabase === 'undefined') {
             <button class="auth-submit" id="authSubmitBtn" onclick="handleAuth()">登录</button>
             <div class="auth-switch">
                 <span id="authSwitchText">还没有账号？</span>
-                <a id="authSwitchLink" onclick="openAuthModal(true)">前往注册</a>
+                <a id="authSwitchLink" onclick="window.location.href='./sign-up.html'">前往注册</a>
             </div>
             <button class="auth-close" onclick="closeAuthModal()">&times;</button>
         </div>
