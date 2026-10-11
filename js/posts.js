@@ -520,19 +520,30 @@ document.querySelectorAll('.tab').forEach(function(tab) {
         var postsList      = document.getElementById('postsList');
         var aiContainer    = document.getElementById('aiChatContainer');
         var launchContainer = document.getElementById('launchTabContainer');
+        var sdContainer    = document.getElementById('spaceDataTabContainer');
 
         if (currentTab === 'ai') {
             if (postsList) postsList.style.display = 'none';
             if (launchContainer) launchContainer.style.display = 'none';
+            if (sdContainer) sdContainer.style.display = 'none';
             if (aiContainer) { aiContainer.style.display = 'flex'; initAI(); }
         } else if (currentTab === 'launches') {
             if (postsList) postsList.style.display = 'none';
             if (aiContainer) aiContainer.style.display = 'none';
+            if (sdContainer) sdContainer.style.display = 'none';
             if (launchContainer) { launchContainer.style.display = 'block'; renderLaunches(); }
+        } else if (currentTab === 'spacedata') {
+            if (postsList) postsList.style.display = 'none';
+            if (aiContainer) aiContainer.style.display = 'none';
+            if (launchContainer) launchContainer.style.display = 'none';
+            if (sdContainer) { sdContainer.style.display = 'block'; showSpaceDataTab(); }
         } else {
             if (postsList) { postsList.style.display = 'block'; renderPosts(); }
             if (aiContainer) aiContainer.style.display = 'none';
             if (launchContainer) launchContainer.style.display = 'none';
+            if (sdContainer) sdContainer.style.display = 'none';
         }
+        // 离开太空数据中心时停止 ISS 轮询
+        if (currentTab !== 'spacedata' && typeof stopISSTracking === 'function') stopISSTracking();
     });
 });

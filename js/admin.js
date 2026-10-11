@@ -199,6 +199,12 @@ window.toggleBanUser = async function(username) {
 window.scrollToPost = function(postId) {
     if (typeof closeSpaceDataModal === 'function') closeSpaceDataModal();
     if (typeof closeProfileModal === 'function') closeProfileModal();
+    // 若当前处于太空数据中心等非帖子标签，先切回帖子列表
+    var sd = document.getElementById('spaceDataTabContainer');
+    if (sd && sd.style.display !== 'none') {
+        var tabBtn = document.querySelector('.tab[data-tab="new"]') || document.querySelector('.tab[data-tab="hot"]');
+        if (tabBtn) tabBtn.click();
+    }
     setTimeout(function() {
         var el = document.querySelector('[data-id="' + postId + '"]');
         if (el) {

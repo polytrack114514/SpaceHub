@@ -4045,6 +4045,27 @@ hr, .divider {
             margin-bottom: 0;
         }
 
+        /* --- 太空数据中心（内嵌标签页） --- */
+        .space-data-tab-container {
+            margin-top: 12px;
+            background: rgba(10, 15, 30, 0.6);
+            border: 1px solid rgba(91, 143, 255, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .space-data-tab-container .space-data-body-inline {
+            max-height: none;
+            overflow: visible;
+        }
+        .sd-source-bar {
+            padding: 10px 16px;
+            border-top: 1px solid rgba(91, 143, 255, 0.12);
+            font-size: 0.72rem;
+            color: #556677;
+            text-align: center;
+            background: rgba(91, 143, 255, 0.04);
+        }
+
         /* --- Moon phase panel --- */
         .moon-panel { text-align: center; padding: 12px; }
         .moon-visual {
@@ -4547,6 +4568,9 @@ if (typeof supabase === 'undefined') {
                 <button class="tab" data-tab="launches">
                     <span class="icon">🚀</span>火箭发射
                 </button>
+                <button class="tab" data-tab="spacedata">
+                    <span class="icon">🛰️</span>太空数据中心
+                </button>
             </div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
@@ -4554,7 +4578,6 @@ if (typeof supabase === 'undefined') {
                 <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
             </div>
                                     <button class="notify-btn" id="notifyBtn" onclick="openNotifyModal()" title="消息通知">🔔<span class="notify-badge" id="notifyBadge" style="display:none;">0</span></button>
-                                    <button class="notify-btn" onclick="openSpaceDataModal()" title="太空数据" style="margin-left:4px;">🛰️</button>
                         <div class="auth-area" id="authArea">
                 <button class="btn-auth" onclick="openAuthModal()">登录</button>
                 <button class="btn-auth" onclick="window.location.href='./sign-up.html'">注册</button>
@@ -4590,6 +4613,67 @@ if (typeof supabase === 'undefined') {
                 <div class="launch-list" id="launchList"></div>
                 <div class="launch-list" id="launchedList" style="display:none;"></div>
             </div>
+        </div>
+        <!-- 太空数据中心（内嵌标签页） -->
+        <div class="space-data-tab-container" id="spaceDataTabContainer" style="display:none;">
+            <div class="space-data-tabs">
+                <button class="sd-tab active" onclick="switchSDTab('iss', this)">ISS追踪</button>
+                <button class="sd-tab" onclick="switchSDTab('moon', this)">月相</button>
+                <button class="sd-tab" onclick="switchSDTab('asteroids', this)">近地小行星</button>
+                <button class="sd-tab" onclick="switchSDTab('crew', this)">ISS乘组</button>
+                <button class="sd-tab" onclick="switchSDTab('meteors', this)">流星雨</button>
+                <button class="sd-tab" onclick="switchSDTab('eclipses', this)">日食月食</button>
+                <button class="sd-tab" onclick="switchSDTab('launches', this)">🚀 发射任务</button>
+                <button class="sd-tab" onclick="switchSDTab('nasaeys', this)">🌐 3D太阳系</button>
+            </div>
+            <div class="space-data-body space-data-body-inline">
+                <div class="sd-panel active" id="sdPanel-iss">
+                    <div class="iss-map">
+                        <div class="iss-track" id="issTrack"></div>
+                        <div class="iss-marker" id="issMarker" style="left:50%;top:50%;">
+                            <div class="iss-pulse"></div>
+                            <div class="iss-dot"></div>
+                        </div>
+                    </div>
+                    <div class="iss-info-grid">
+                        <div class="iss-info-item"><div class="iss-info-label">纬度</div><div class="iss-info-value" id="issLat">加载中...</div></div>
+                        <div class="iss-info-item"><div class="iss-info-label">经度</div><div class="iss-info-value" id="issLng">加载中...</div></div>
+                        <div class="iss-info-item"><div class="iss-info-label">高度</div><div class="iss-info-value" id="issAlt">加载中...</div></div>
+                        <div class="iss-info-item"><div class="iss-info-label">速度</div><div class="iss-info-value" id="issVel">加载中...</div></div>
+                    </div>
+                </div>
+
+                <div class="sd-panel" id="sdPanel-moon">
+                    <div class="moon-panel" id="moonPanel">点击加载月相...</div>
+                </div>
+
+                <div class="sd-panel" id="sdPanel-asteroids">
+                    <div class="asteroid-panel" id="asteroidPanel">点击加载近地小行星数据...</div>
+                </div>
+
+                <div class="sd-panel" id="sdPanel-crew">
+                    <div class="crew-panel" id="crewPanel">点击加载ISS乘组信息...</div>
+                </div>
+
+                <div class="sd-panel" id="sdPanel-meteors">
+                    <div class="meteor-panel" id="meteorPanel">点击查看流星雨日历...</div>
+                </div>
+
+                <div class="sd-panel" id="sdPanel-eclipses">
+                    <div class="eclipse-panel" id="eclipsePanel">点击查看日食月食预报...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-launches">
+                    <div class="sd-content" id="launchPanel">🚀 发射任务加载中...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-nasaeys">
+                    <div class="nasa-eyes-panel">
+                        <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
+                        <div class="nasa-eyes-tip">数据来源：NASA Eyes</div>
+                        <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：whertheiss.at 实时卫星定位 API</div>
         </div>
     </div>
     <!-- 发帖弹窗 -->
@@ -4716,71 +4800,7 @@ if (typeof supabase === 'undefined') {
         </div>
     </div>
 
-<!-- Space Data Modal -->
-<div class="space-data-overlay" id="spaceDataModal" onclick="if(event.target===this)closeSpaceDataModal()">
-    <div class="space-data-content">
-        <div class="space-data-header">
-            <h2>🛰️ 太空数据中心</h2>
-            <button onclick="closeSpaceDataModal()">✕</button>
-        </div>
-        <div class="space-data-tabs">
-            <button class="sd-tab active" onclick="switchSDTab('iss', this)">ISS追踪</button>
-            <button class="sd-tab" onclick="switchSDTab('moon', this)">月相</button>
-            <button class="sd-tab" onclick="switchSDTab('asteroids', this)">近地小行星</button>
-            <button class="sd-tab" onclick="switchSDTab('crew', this)">ISS乘组</button>
-            <button class="sd-tab" onclick="switchSDTab('meteors', this)">流星雨</button>
-            <button class="sd-tab" onclick="switchSDTab('eclipses', this)">日食月食</button>
-            <button class="sd-tab" onclick="switchSDTab('launches', this)">🚀 发射任务</button>
-            <button class="sd-tab" onclick="switchSDTab('nasaeys', this)">🌐 3D太阳系</button>
-                    </div>
-        <div class="space-data-body">
-            <div class="sd-panel active" id="sdPanel-iss">
-                <div class="iss-map">
-                    <div class="iss-track" id="issTrack"></div>
-                    <div class="iss-marker" id="issMarker" style="left:50%;top:50%;">
-                        <div class="iss-pulse"></div>
-                        <div class="iss-dot"></div>
-                    </div>
-                </div>
-                <div class="iss-info-grid">
-                    <div class="iss-info-item"><div class="iss-info-label">纬度</div><div class="iss-info-value" id="issLat">加载中...</div></div>
-                    <div class="iss-info-item"><div class="iss-info-label">经度</div><div class="iss-info-value" id="issLng">加载中...</div></div>
-                    <div class="iss-info-item"><div class="iss-info-label">高度</div><div class="iss-info-value" id="issAlt">加载中...</div></div>
-                    <div class="iss-info-item"><div class="iss-info-label">速度</div><div class="iss-info-value" id="issVel">加载中...</div></div>
-                </div>
-            </div>
-
-            <div class="sd-panel" id="sdPanel-moon">
-                <div class="moon-panel" id="moonPanel">点击加载月相...</div>
-            </div>
-
-            <div class="sd-panel" id="sdPanel-asteroids">
-                <div class="asteroid-panel" id="asteroidPanel">点击加载近地小行星数据...</div>
-            </div>
-
-            <div class="sd-panel" id="sdPanel-crew">
-                <div class="crew-panel" id="crewPanel">点击加载ISS乘组信息...</div>
-            </div>
-
-            <div class="sd-panel" id="sdPanel-meteors">
-                <div class="meteor-panel" id="meteorPanel">点击查看流星雨日历...</div>
-            </div>
-
-            <div class="sd-panel" id="sdPanel-eclipses">
-                <div class="eclipse-panel" id="eclipsePanel">点击查看日食月食预报...</div>
-            </div>
-            <div class="sd-panel" id="sdPanel-launches">
-                <div class="sd-content" id="launchPanel">🚀 发射任务加载中...</div>
-            </div>
-            <div class="sd-panel" id="sdPanel-nasaeys">
-                <div class="nasa-eyes-panel">
-                    <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
-                    <div class="nasa-eyes-tip">数据来源：NASA Eyes</div>
-                    <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
-                </div>
-            </div>
-
-            <!-- Image Lightbox -->
+<!-- Image Lightbox -->
 <div class="image-lightbox" id="imageLightbox" onclick="closeImageLightbox()">
     <img id="lightboxImage" src="" alt="图片预览">
 </div>

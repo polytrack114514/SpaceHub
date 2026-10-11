@@ -121,8 +121,6 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         var lb = document.getElementById('imageLightbox');
         if (lb && lb.classList.contains('show')) closeImageLightbox();
-        var sdm = document.getElementById('spaceDataModal');
-        if (sdm && sdm.classList.contains('show')) closeSpaceDataModal && closeSpaceDataModal();
     }
 });
 

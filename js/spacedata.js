@@ -43,21 +43,43 @@ function renderOnlineUsers(users) {
 }
 
 // ==================== 太空数据中心 ====================
-function openSpaceDataModal() {
-    document.getElementById('spaceDataModal').classList.add('show');
-    switchSDTab('iss', document.querySelector('.sd-tab'));
+// 各子面板的数据来源（底部来源栏显示）
+var sdSources = {
+    iss:       'whertheiss.at 实时卫星定位 API',
+    moon:      '本地天文算法（朔望月周期推算）',
+    asteroids: 'NASA 近地天体 API (api.nasa.gov)',
+    crew:      'open-notify.org 实时在轨人员 API',
+    meteors:   '国际流星组织 (IMO) 数据整理',
+    eclipses:  'NASA Eclipse Predictions',
+    launches:  'The Space Devs Launch Library 2',
+    nasaeys:   'NASA Eyes on the Solar System'
+};
+var sdCurrentTab = 'iss';
+
+// 主标签页「太空数据中心」被选中时调用：保持上次的子面板
+function showSpaceDataTab() {
+    var btn = document.querySelector('.sd-tab.active') || document.querySelector('.sd-tab');
+    switchSDTab(sdCurrentTab, btn);
 }
+
+// 兼容旧入口：顶部按钮已移除，若被调用则切换到太空数据中心标签
+function openSpaceDataModal() {
+    var tab = document.querySelector('.tab[data-tab="spacedata"]');
+    if (tab) tab.click();
+}
+// 兼容旧调用（如 scrollToPost / ESC 关闭）：仅停止轮询
 function closeSpaceDataModal() {
-    var f = document.getElementById('nasaEyesFrame'); if (f && f.src !== 'about:blank') { f.src = 'about:blank'; }
-    document.getElementById('spaceDataModal').classList.remove('show');
     stopISSTracking();
 }
 window.switchSDTab = function(tab, btn) {
+    sdCurrentTab = tab;
     document.querySelectorAll('.sd-tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelectorAll('.sd-panel').forEach(function(p) { p.classList.remove('active'); });
     if (btn) btn.classList.add('active');
     var panel = document.getElementById('sdPanel-' + tab);
     if (panel) panel.classList.add('active');
+    var src = document.getElementById('sdSourceBar');
+    if (src) src.textContent = '📡 数据来源：' + (sdSources[tab] || 'SpaceHub');
     stopISSTracking();
     if (tab === 'iss') { startISSTracking(); }
         else if (tab === 'moon') { renderMoonPhase(); }
@@ -639,8 +661,6 @@ if (!window._spaceFeaturesInit) {
         if (e.key === 'Escape') {
             var lb = document.getElementById('imageLightbox');
             if (lb && lb.classList.contains('show')) closeImageLightbox();
-            var sdm = document.getElementById('spaceDataModal');
-            if (sdm && sdm.classList.contains('show')) closeSpaceDataModal();
         }
     });
 }
