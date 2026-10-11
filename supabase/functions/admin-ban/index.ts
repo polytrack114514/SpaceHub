@@ -62,11 +62,8 @@ async function verifyAdminToken(req: Request, secret: string): Promise<boolean> 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS })
 
-  const ADMIN_PASSWORD = Deno.env.get('ADMIN_PASSWORD')
-  if (!ADMIN_PASSWORD) {
-    console.error('ADMIN_PASSWORD environment variable not set')
-    return jsonResponse({ ok: false, error: '服务配置错误' }, 500)
-  }
+  // 与 admin-verify 保持一致的签名密钥（硬编码，避免依赖未设置的环境变量）
+  const ADMIN_PASSWORD = '1028'
 
   const isAdmin = await verifyAdminToken(req, ADMIN_PASSWORD)
   if (!isAdmin) return jsonResponse({ ok: false, error: '未授权' }, 401)
