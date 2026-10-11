@@ -4067,7 +4067,7 @@ hr, .divider {
         }
 
         /* --- Tonight's Sky / ISS Pass / Aurora panels --- */
-        .tonight-panel, .ispass-panel, .aurora-panel { padding: 4px 2px; }
+        .tonight-panel, .ispass-panel, .aurora-panel, .fleet-panel { padding: 4px 2px; }
         .sd-loc-row {
             display: flex; align-items: center; justify-content: space-between; gap: 8px;
             font-size: 0.75rem; color: #667788; margin-bottom: 10px;
@@ -4154,6 +4154,40 @@ hr, .divider {
             border: 1px solid rgba(91, 143, 255, 0.1); border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.5;
         }
         .sd-empty-tip { text-align: center; padding: 24px 12px; color: #667788; font-size: 0.82rem; }
+        .sd-cloud-verdict {
+            display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px;
+            background: rgba(91, 143, 255, 0.06); border: 1px solid rgba(91, 143, 255, 0.15);
+            font-size: 0.82rem; color: #ccdde8; margin-bottom: 8px;
+        }
+        .sd-cloud-verdict .v-tag { font-weight: 700; }
+        .fleet-map {
+            position: relative; width: 100%; aspect-ratio: 2/1; margin-bottom: 10px;
+            background: #050810; border: 1px solid rgba(91, 143, 255, 0.15); border-radius: 8px; overflow: hidden;
+            background-image:
+                linear-gradient(rgba(91, 143, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(91, 143, 255, 0.05) 1px, transparent 1px);
+            background-size: 8.33% 10%;
+        }
+        .fleet-map::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(91, 143, 255, 0.15); }
+        .fleet-map::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(91, 143, 255, 0.15); }
+        .fleet-dot {
+            position: absolute; width: 9px; height: 9px; border-radius: 50%;
+            transform: translate(-50%, -50%); z-index: 5; transition: left 4.5s linear, top 4.5s linear;
+        }
+        .fleet-legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+        .fleet-legend .lg {
+            display: flex; align-items: center; gap: 5px; font-size: 0.68rem; color: #8899aa;
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 6px; padding: 2px 8px;
+        }
+        .fleet-legend .lg i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .fleet-row {
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 6px;
+        }
+        .fleet-row .f-name { color: #ccdde8; font-size: 0.78rem; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .fleet-row .f-meta { color: #8899aa; font-family: 'Courier New', monospace; font-size: 0.7rem; white-space: nowrap; }
+        .fleet-row .f-type { font-size: 0.64rem; color: #667788; background: rgba(91, 143, 255, 0.08); border-radius: 6px; padding: 2px 8px; flex-shrink: 0; }
 
         /* --- Moon phase panel --- */
         .moon-panel { text-align: center; padding: 12px; }
@@ -4716,7 +4750,8 @@ if (typeof supabase === 'undefined') {
                 <button class="sd-tab" onclick="switchSDTab('nasaeys', this)">🌐 3D太阳系</button>
                 <button class="sd-tab" onclick="switchSDTab('tonight', this)">🌃 今夜星空</button>
                 <button class="sd-tab" onclick="switchSDTab('isspass', this)">⏰ ISS过境</button>
-                <button class="sd-tab" onclick="switchSDTab('aurora', this)">🌌 极光预报</button>
+                <button class="sd-tab" onclick="switchSDTab('aurora', this)">☀️ 空间天气</button>
+                <button class="sd-tab" onclick="switchSDTab('fleet', this)">🛰️ 卫星编队</button>
             </div>
             <div class="space-data-body space-data-body-inline">
                 <div class="sd-panel active" id="sdPanel-iss">
@@ -4771,7 +4806,10 @@ if (typeof supabase === 'undefined') {
                     <div class="ispass-panel" id="issPassPanel">点击加载ISS过境预报...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-aurora">
-                    <div class="aurora-panel" id="auroraPanel">点击加载极光预报...</div>
+                    <div class="aurora-panel" id="auroraPanel">点击加载空间天气...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-fleet">
+                    <div class="fleet-panel" id="fleetPanel">点击加载卫星编队追踪...</div>
                 </div>
             </div>
             <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：whertheiss.at 实时卫星定位 API</div>
