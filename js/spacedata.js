@@ -52,7 +52,10 @@ var sdSources = {
     meteors:   '国际流星组织 (IMO) 数据整理',
     eclipses:  'NASA Eclipse Predictions',
     launches:  'The Space Devs Launch Library 2',
-    nasaeys:   'NASA Eyes on the Solar System'
+    nasaeys:   'NASA Eyes on the Solar System',
+    tonight:   '本地天文算法（行星视位置 · 恒星时 · 曙暮光推算）',
+    isspass:   'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me',
+    aurora:    'NOAA 空间天气预报中心 (SWPC) Kp 指数'
 };
 var sdCurrentTab = 'iss';
 
@@ -81,6 +84,7 @@ window.switchSDTab = function(tab, btn) {
     var src = document.getElementById('sdSourceBar');
     if (src) src.textContent = '📡 数据来源：' + (sdSources[tab] || 'SpaceHub');
     stopISSTracking();
+    stopPassReminder();
     if (tab === 'iss') { startISSTracking(); }
         else if (tab === 'moon') { renderMoonPhase(); }
     else if (tab === 'asteroids') { loadAsteroids(); }
@@ -88,6 +92,9 @@ window.switchSDTab = function(tab, btn) {
     else if (tab === 'meteors') { renderMeteorShowers(); }
     else if (tab === 'eclipses') { renderEclipses(); }
     else if (tab === 'launches') { loadLaunchData(); }
+    else if (tab === 'tonight') { renderTonightsSky(); }
+    else if (tab === 'isspass') { loadISSPasses(); }
+    else if (tab === 'aurora') { loadAurora(); }
     else if (tab === 'nasaeys') {
         var frame = document.getElementById('nasaEyesFrame');
         if (frame && frame.src === 'about:blank') {
@@ -646,6 +653,528 @@ function renderEclipses() {
         html += '</div>';
     }
     html += '<div style="text-align:center;margin-top:8px;font-size:0.68rem;color:#445566;">数据来源: NASA Eclipse predictions</div>';
+    panel.innerHTML = html;
+}
+
+// ==================== 观测者位置（今夜星空 / ISS过境共用） ====================
+function sdGetObserver() {
+    try {
+        var c = JSON.parse(localStorage.getItem('sd_observer'));
+        if (c && typeof c.lat === 'number' && typeof c.lng === 'number') return c;
+    } catch (e) {}
+    return { lat: 39.9042, lng: 116.4074, label: '北京（默认位置）' };
+}
+function sdRequestObserver(then) {
+    if (!navigator.geolocation) { alert('浏览器不支持定位'); return; }
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        var obs = { lat: pos.coords.latitude, lng: pos.coords.longitude, label: '我的位置' };
+        try { localStorage.setItem('sd_observer', JSON.stringify(obs)); } catch (e) {}
+        if (then) then(obs);
+    }, function() {
+        alert('定位失败或被拒绝，将继续使用 ' + sdGetObserver().label);
+    }, { timeout: 8000, maximumAge: 600000 });
+}
+function sdLocRowHtml(obs, rerenderCall) {
+    return '<div class="sd-loc-row"><span>📍 ' + escapeHtml(obs.label) + '（' + obs.lat.toFixed(1) + '°, ' + obs.lng.toFixed(1) + '°）</span>' +
+        '<button onclick="sdRequestObserver(function(){' + rerenderCall + '})">更新位置</button></div>';
+}
+
+// ==================== 天文算法工具（低精度视位置，显示用） ====================
+function sdRad(d) { return d * Math.PI / 180; }
+function sdDeg(r) { return r * 180 / Math.PI; }
+function sdJD(date) { return date.getTime() / 86400000 + 2440587.5; }
+
+// 当地恒星时（度）
+function sdLST(jd, lngDeg) {
+    var d = jd - 2451545, T = d / 36525;
+    var g = 280.46061837 + 360.98564736629 * d + 0.000387933 * T * T;
+    g = ((g % 360) + 360) % 360;
+    return ((g + lngDeg) % 360 + 360) % 360;
+}
+
+// 赤经(小时)/赤纬(度) → 地平坐标 {alt, az}
+function sdAltAz(raHours, decDeg, latDeg, lngDeg, date) {
+    var ha = ((sdLST(sdJD(date), lngDeg) - raHours * 15 + 360) % 360) * Math.PI / 180;
+    var phi = sdRad(latDeg), dec = sdRad(decDeg);
+    var sinAlt = Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha);
+    var alt = sdDeg(Math.asin(Math.max(-1, Math.min(1, sinAlt))));
+    var cosAz = (Math.sin(dec) - sinAlt * Math.sin(phi)) / (Math.cos(sdRad(alt)) * Math.cos(phi));
+    var az = sdDeg(Math.acos(Math.max(-1, Math.min(1, cosAz))));
+    if (Math.sin(ha) > 0) az = 360 - az;
+    return { alt: alt, az: az };
+}
+
+// 太阳地心黄道经度（弧度）
+function sdSunEcliptic(date) {
+    var n = sdJD(date) - 2451545;
+    var L = 280.46 + 0.9856474 * n;
+    var M = sdRad(357.528 + 0.9856003 * n);
+    return sdRad(L + 1.915 * Math.sin(M) + 0.02 * Math.sin(2 * M));
+}
+
+// 行星轨道根数（Schlyter 低精度模型，n = 自 1999-12-31 起的天数）
+var sdPlanetElems = {
+    Venus:   { cn: '金星', sym: '♀', color: '#fde68a', mag: -4.0, N: [76.6799, 2.4659e-5],  i: [3.3946, 2.75e-8],   w: [54.891, 2.45878e-5],  a: 0.723330, e: [0.006773, -1.302e-9], M: [48.0052, 1.6021302244] },
+    Mars:    { cn: '火星', sym: '♂', color: '#f87171', mag: 0.7,  N: [49.5574, 2.11081e-5], i: [1.8497, -1.78e-8],  w: [286.5016, 2.92961e-5], a: 1.523688, e: [0.093405, 2.516e-9],  M: [18.6021, 0.5240207766] },
+    Jupiter: { cn: '木星', sym: '♃', color: '#fb923c', mag: -2.0, N: [100.4542, 2.76854e-5], i: [1.3030, -1.557e-7], w: [273.8777, 1.64505e-5], a: 5.20256,  e: [0.048498, 4.469e-9],  M: [19.8950, 0.0830853001] },
+    Saturn:  { cn: '土星', sym: '♄', color: '#fbbf24', mag: 0.7,  N: [113.6634, 2.38980e-5], i: [2.4886, -1.081e-7], w: [339.3939, 2.97661e-5], a: 9.55475,  e: [0.055546, -9.499e-9], M: [316.9670, 0.0334442282] }
+};
+
+// 行星地心赤经(小时)/赤纬(度)
+function sdPlanetRaDec(name, date) {
+    var el = sdPlanetElems[name];
+    var n = sdJD(date) - 2451543.5;
+    var N = sdRad(el.N[0] + el.N[1] * n);
+    var i = sdRad(el.i[0] + el.i[1] * n);
+    var w = sdRad(el.w[0] + el.w[1] * n);
+    var a = el.a;
+    var e = el.e[0] + el.e[1] * n;
+    var M = sdRad(((el.M[0] + el.M[1] * n) % 360 + 360) % 360);
+    var E = M + e * Math.sin(M) * (1 + e * Math.cos(M));
+    var xv = a * (Math.cos(E) - e);
+    var yv = a * Math.sqrt(1 - e * e) * Math.sin(E);
+    var v = Math.atan2(yv, xv);
+    var rp = Math.sqrt(xv * xv + yv * yv);
+    // 日心黄道直角坐标
+    var u = v + w;
+    var xs = rp * (Math.cos(N) * Math.cos(u) - Math.sin(N) * Math.sin(u) * Math.cos(i));
+    var ys = rp * (Math.sin(N) * Math.cos(u) + Math.cos(N) * Math.sin(u) * Math.cos(i));
+    var zs = rp * Math.sin(u) * Math.sin(i);
+    // 太阳地心向量
+    var ls = sdSunEcliptic(date);
+    var rs = 1.00014 - 0.01671 * Math.cos(sdRad(357.528 + 0.9856003 * (sdJD(date) - 2451545)));
+    var xg = xs + rs * Math.cos(ls);
+    var yg = ys + rs * Math.sin(ls);
+    var zg = zs;
+    // 黄道 → 赤道（含交角）
+    var lam = Math.atan2(yg, xg);
+    var bet = Math.atan2(zg, Math.sqrt(xg * xg + yg * yg));
+    var eps = sdRad(23.4393);
+    var ra = sdDeg(Math.atan2(Math.sin(lam) * Math.cos(eps) - Math.tan(bet) * Math.sin(eps), Math.cos(lam))) / 15;
+    var dec = sdDeg(Math.asin(Math.sin(bet) * Math.cos(eps) + Math.cos(bet) * Math.sin(eps) * Math.sin(lam)));
+    return { ra: (ra + 24) % 24, dec: dec };
+}
+
+// 月相信息（与月相面板同一算法）
+function sdMoonInfo(date) {
+    var knownNew = Date.UTC(2000, 0, 6, 18, 14, 0);
+    var syn = 29.530588853;
+    var age = ((date.getTime() - knownNew) / 86400000) % syn;
+    if (age < 0) age += syn;
+    var phase = age / syn;
+    var illum = Math.round((1 - Math.cos(2 * Math.PI * phase)) / 2 * 100);
+    var name, emoji;
+    if (phase < 0.03 || phase > 0.97) { name = '新月'; emoji = '🌑'; }
+    else if (phase < 0.22) { name = '蛾眉月'; emoji = '🌒'; }
+    else if (phase < 0.28) { name = '上弦月'; emoji = '🌓'; }
+    else if (phase < 0.47) { name = '盈凸月'; emoji = '🌔'; }
+    else if (phase < 0.53) { name = '满月'; emoji = '🌕'; }
+    else if (phase < 0.72) { name = '亏凸月'; emoji = '🌖'; }
+    else if (phase < 0.78) { name = '下弦月'; emoji = '🌗'; }
+    else { name = '残月'; emoji = '🌘'; }
+    return { phase: phase, illum: illum, name: name, emoji: emoji };
+}
+
+// 日出/日落/天文昏影终（本地时区近似）
+function sdSunTimes(date, lat, lng) {
+    var eps = sdRad(23.439), phi = sdRad(lat);
+    var dec = Math.asin(Math.sin(eps) * Math.sin(sdSunEcliptic(date)));
+    function h(h0deg) {
+        var x = (Math.sin(sdRad(h0deg)) - Math.sin(phi) * Math.sin(dec)) / (Math.cos(phi) * Math.cos(dec));
+        return sdDeg(Math.acos(Math.max(-1, Math.min(1, x)))) / 15;
+    }
+    var tz = -date.getTimezoneOffset() / 60; // 本地时区偏移（小时）
+    var noon = 12 - lng / 15 + tz; // 本地太阳正午（本地时钟小时）
+    function mk(hours) {
+        var d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return new Date(d.getTime() + hours * 3600000);
+    }
+    return {
+        sunset: mk(noon + h(-0.833)),
+        sunrise: mk(noon - h(-0.833)),
+        astroDusk: mk(noon + h(-18))
+    };
+}
+function sdFmtTime(d) {
+    try { return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }); }
+    catch (e) { return '--:--'; }
+}
+function sdFmtDur(ms) {
+    var min = Math.round(ms / 60000);
+    if (min < 60) return min + ' 分钟';
+    return Math.floor(min / 60) + ' 小时 ' + (min % 60) + ' 分';
+}
+
+// ==================== 🌃 今夜星空推荐 ====================
+function renderTonightsSky() {
+    var panel = document.getElementById('tonightPanel');
+    if (!panel) return;
+    var obs = sdGetObserver();
+    var now = new Date();
+    var midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    var moon = sdMoonInfo(now);
+    var times = sdSunTimes(now, obs.lat, obs.lng);
+    var dirs = ['北', '东北', '东', '东南', '南', '西南', '西', '西北'];
+
+    var html = sdLocRowHtml(obs, 'renderTonightsSky()');
+
+    // 顶部四格：日落 / 天文暗夜 / 日出 / 月相照明
+    html += '<div class="sd-stat-row">';
+    html += '<div class="sd-stat-tile"><div class="t-icon">🌅</div><div class="t-val">' + sdFmtTime(times.sunset) + '</div><div class="t-label">日落</div></div>';
+    html += '<div class="sd-stat-tile"><div class="t-icon">🌑</div><div class="t-val">' + sdFmtTime(times.astroDusk) + '</div><div class="t-label">天文暗夜</div></div>';
+    html += '<div class="sd-stat-tile"><div class="t-icon">🌄</div><div class="t-val">' + sdFmtTime(sdSunTimes(midnight, obs.lat, obs.lng).sunrise) + '</div><div class="t-label">日出</div></div>';
+    html += '<div class="sd-stat-tile"><div class="t-icon">' + moon.emoji + '</div><div class="t-val">' + moon.illum + '%</div><div class="t-label">月光照明</div></div>';
+    html += '</div>';
+
+    // 月相横幅
+    var moonTip = moon.illum > 70 ? '<div class="m-tip" style="color:#fbbf24;">⚠️ 月光较亮，暗弱天体会受影响</div>'
+        : (moon.illum < 20 ? '<div class="m-tip" style="color:#40ff88;">✅ 黑夜条件好，适合深空观测！</div>' : '');
+    html += '<div class="sd-moon-banner"><div class="m-emoji">' + moon.emoji + '</div><div>' +
+        '<div class="m-name">今夜月相：' + moon.name + '</div>' +
+        '<div class="m-sub">照明 ' + moon.illum + '% · 月龄 ' + ((now.getTime() - Date.UTC(2000, 0, 6, 18, 14, 0)) / 86400000 % 29.530588853).toFixed(1) + ' 天</div>' +
+        moonTip + '</div></div>';
+
+    // 午夜可见行星
+    html += '<div class="sd-section-title">🪐 午夜可见的行星</div>';
+    var visible = [], hidden = [];
+    Object.keys(sdPlanetElems).forEach(function(en) {
+        var el = sdPlanetElems[en];
+        var pos = sdPlanetRaDec(en, midnight);
+        var aa = sdAltAz(pos.ra, pos.dec, obs.lat, obs.lng, midnight);
+        var p = { en: en, cn: el.cn, sym: el.sym, color: el.color, mag: el.mag, alt: aa.alt, az: dirs[Math.round(aa.az / 45) % 8] };
+        (aa.alt > 5 ? visible : hidden).push(p);
+    });
+    if (visible.length === 0) {
+        html += '<div class="sd-empty-tip">午夜时分没有肉眼行星在地平线上</div>';
+    } else {
+        html += '<div class="sd-planet-grid">';
+        visible.forEach(function(p) {
+            html += '<div class="sd-planet-card" style="background:' + p.color + '10;border:1px solid ' + p.color + '35;">' +
+                '<div class="p-name"><span style="color:' + p.color + ';font-size:1.05rem;">' + p.sym + '</span><span style="color:' + p.color + ';">' + p.cn + '</span></div>' +
+                '<div class="p-alt">' + p.alt.toFixed(0) + '° 高度角</div>' +
+                '<div class="p-sub">' + p.az + '方向 · 星等 ' + p.mag.toFixed(1) + '</div></div>';
+        });
+        html += '</div>';
+    }
+    if (hidden.length > 0) {
+        html += '<div style="font-size:0.72rem;color:#556677;margin-top:6px;">今夜午夜不可见：' + hidden.map(function(p) { return p.cn; }).join('、') + '</div>';
+    }
+
+    // 当季最佳深空天体
+    html += '<div class="sd-section-title">🔭 当季最佳观测目标</div>';
+    var mIdx = now.getMonth();
+    var dso = [{ name: '月球', emoji: moon.emoji, sub: '卫星 · 目视目标', tip: '照明 ' + moon.illum + '%' }];
+    if (mIdx >= 8 && mIdx <= 11) {
+        dso.push({ name: '仙女座星系 M31', emoji: '🌌', sub: '旋涡星系 · 3.4 等', tip: '秋季最佳，肉眼可见' });
+        dso.push({ name: '英仙座双星团', emoji: '✨', sub: '疏散星团 · 4.3 等', tip: '双筒镜绝佳目标' });
+    }
+    if (mIdx >= 11 || mIdx <= 2) {
+        dso.push({ name: '猎户座大星云 M42', emoji: '🌫️', sub: '弥漫星云 · 4.0 等', tip: '肉眼可见的恒星摇篮' });
+        dso.push({ name: '昴星团 M45', emoji: '✨', sub: '疏散星团 · 1.6 等', tip: '七姊妹，肉眼轻松可见' });
+        dso.push({ name: '参宿四', emoji: '⭐', sub: '红超巨星 · 0.5 等', tip: '猎户座左肩的亮度明星' });
+    }
+    if (mIdx >= 3 && mIdx <= 6) {
+        dso.push({ name: '狮子座三重星系', emoji: '🌌', sub: '星系群 · 9.3 等', tip: '春季星系季，需望远镜' });
+        dso.push({ name: '室女座星系团', emoji: '🌌', sub: '星系团 · 8.4 等', tip: '1300+ 星系 · 6500 万光年' });
+    }
+    if (mIdx >= 5 && mIdx <= 9) {
+        dso.push({ name: '银河核心（人马座）', emoji: '🌌', sub: '银河中心带', tip: '暗夜地点下最壮观' });
+        dso.push({ name: 'M13 武仙座星团', emoji: '✨', sub: '球状星团 · 5.8 等', tip: '30 万颗恒星 · 2.5 万光年' });
+    }
+    dso.slice(0, 5).forEach(function(d) {
+        html += '<div class="sd-dso-row"><span class="d-emoji">' + d.emoji + '</span>' +
+            '<div style="flex:1;min-width:0;"><div class="d-name">' + escapeHtml(d.name) + '</div><div class="d-sub">' + escapeHtml(d.sub) + '</div></div>' +
+            '<div class="d-tip">' + escapeHtml(d.tip) + '</div></div>';
+    });
+    html += '<div class="sd-note">💡 计算基于你所在位置的本地天文算法（行星视位置误差通常小于 1°）。点击「更新位置」可获得更精确的结果。</div>';
+    panel.innerHTML = html;
+}
+
+// ==================== ⏰ ISS 过境预报 ====================
+var issPassReminderTimer = null;
+var issPassCdTimer = null;
+var sdSatPromise = null;
+
+function ensureSatelliteJs() {
+    if (window.satellite) return Promise.resolve();
+    if (sdSatPromise) return sdSatPromise;
+    sdSatPromise = new Promise(function(resolve, reject) {
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/satellite.js@5.0.0/dist/satellite.min.js';
+        s.onload = function() { resolve(); };
+        s.onerror = function() { sdSatPromise = null; reject(new Error('satellite.js 加载失败')); };
+        document.head.appendChild(s);
+    });
+    return sdSatPromise;
+}
+
+function stopPassReminder() {
+    if (issPassReminderTimer) { clearTimeout(issPassReminderTimer); issPassReminderTimer = null; }
+    if (issPassCdTimer) { clearInterval(issPassCdTimer); issPassCdTimer = null; }
+    var btn = document.getElementById('issPassReminderBtn');
+    if (btn) { btn.textContent = '🔔 过境提醒'; btn.style.cssText = ''; }
+}
+
+window.togglePassReminder = function() {
+    if (issPassReminderTimer) { stopPassReminder(); return; }
+    var passes = window._sdIssPasses || [];
+    if (!passes.length) { alert('暂无可提醒的过境'); return; }
+    var next = passes[0];
+    var wait = next.start - Date.now() - 10 * 60000;
+    if (wait < 0) wait = Math.max(next.start - Date.now(), 0);
+    if (window.Notification && Notification.permission === 'default') {
+        try { Notification.requestPermission(); } catch (e) {}
+    }
+    issPassReminderTimer = setTimeout(function() {
+        issPassReminderTimer = null;
+        var msg = '🛸 ISS 将在 10 分钟内过境（最大高度 ' + next.maxEl.toFixed(0) + '°），抬头看看！';
+        try {
+            if (window.Notification && Notification.permission === 'granted') new Notification('ISS 过境提醒', { body: msg });
+            else alert(msg);
+        } catch (e) { alert(msg); }
+    }, wait);
+    var btn = document.getElementById('issPassReminderBtn');
+    if (btn) { btn.textContent = '✅ 已设提醒（提前10分钟）'; btn.style.cssText = 'background:rgba(64,255,136,0.15);border-color:rgba(64,255,136,0.4);color:#40ff88;'; }
+};
+
+function computeISSPasses(obs, line1, line2, days) {
+    var satrec = satellite.twoline2satrec(line1, line2);
+    if (satrec.error && satrec.error !== 0) throw new Error('TLE 解析失败 (错误码 ' + satrec.error + ')');
+    var obsGd = { latitude: sdRad(obs.lat), longitude: sdRad(obs.lng), height: 0.05 };
+    var start = Date.now();
+    var end = start + days * 86400000;
+    var step = 30000;
+    var passes = [], cur = null;
+    for (var t = start; t <= end; t += step) {
+        var date = new Date(t);
+        var eci = satellite.propagate(satrec, date);
+        if (!eci || !eci.position) continue;
+        var gmst = satellite.gstime(date);
+        var ecf = satellite.eciToEcf(eci.position, gmst);
+        var look = satellite.ecfToLookAngles ? satellite.ecfToLookAngles(obsGd, ecf) : satellite.eciToLookAngles(obsGd, ecf);
+        var el = sdDeg(look.elevation);
+        if (el >= 0) {
+            if (!cur) cur = { start: t, end: t, maxEl: el, maxT: t, azMax: sdDeg(look.azimuth) };
+            else {
+                cur.end = t;
+                if (el > cur.maxEl) { cur.maxEl = el; cur.maxT = t; cur.azMax = sdDeg(look.azimuth); }
+            }
+        } else if (cur) {
+            if (cur.maxEl >= 10) passes.push(cur);
+            cur = null;
+        }
+    }
+    return passes.slice(0, 10);
+}
+
+var issPassLoadedOnce = false;
+async function loadISSPasses() {
+    var panel = document.getElementById('issPassPanel');
+    if (!panel) return;
+    if (window._sdIssPasses && window._sdIssPassesTime && Date.now() - window._sdIssPassesTime < 10 * 60000) {
+        renderISSPasses(panel, window._sdIssPasses);
+        return;
+    }
+    var obs = sdGetObserver();
+    panel.innerHTML = '<div style="text-align:center;padding:40px;color:#667788;">🛰️ 正在推算未来 5 天「' + escapeHtml(obs.label) + '」上空的 ISS 过境...</div>';
+    try {
+        await ensureSatelliteJs();
+        var tle = null;
+        try { tle = JSON.parse(localStorage.getItem('sd_iss_tle')); } catch (e) {}
+        if (!tle || !tle.line1 || Date.now() - (tle.t || 0) > 12 * 3600000) {
+            var resp = await fetch('https://tle.ivanstanojevic.me/api/tle/25544');
+            if (!resp.ok) throw new Error('TLE 数据获取失败: ' + resp.status);
+            var data = await resp.json();
+            tle = { line1: data.line1, line2: data.line2, t: Date.now() };
+            try { localStorage.setItem('sd_iss_tle', JSON.stringify(tle)); } catch (e2) {}
+        }
+        var passes = computeISSPasses(obs, tle.line1, tle.line2, 5);
+        window._sdIssPasses = passes;
+        window._sdIssPassesTime = Date.now();
+        issPassLoadedOnce = true;
+        renderISSPasses(panel, passes);
+    } catch (e) {
+        panel.innerHTML = '<div style="text-align:center;padding:40px;color:#ff4060;">⚠️ ' + escapeHtml(e.message || '计算失败') +
+            '<br><button onclick="loadISSPasses()" style="margin-top:12px;padding:8px 20px;background:rgba(91,143,255,0.15);border:1px solid rgba(91,143,255,0.3);color:#5b8fff;border-radius:8px;cursor:pointer;">重试</button></div>';
+    }
+}
+
+function renderISSPasses(panel, passes) {
+    var obs = sdGetObserver();
+    var dirs = ['北', '东北', '东', '东南', '南', '西南', '西', '西北'];
+    var html = sdLocRowHtml(obs, 'window._sdIssPasses=null;loadISSPasses()');
+    html += '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">' +
+        '<button id="issPassReminderBtn" onclick="togglePassReminder()" style="background:rgba(91,143,255,0.12);border:1px solid rgba(91,143,255,0.25);color:#5b8fff;border-radius:8px;padding:5px 14px;cursor:pointer;font-size:0.75rem;font-family:inherit;">🔔 过境提醒</button></div>';
+
+    if (passes.length === 0) {
+        html += '<div class="sd-empty-tip">未来 5 天计算窗口内没有最大高度超过 10° 的过境（可尝试更新位置）</div>';
+        panel.innerHTML = html;
+        return;
+    }
+
+    // 下次过境倒计时
+    var next = passes[0];
+    html += '<div class="sd-countdown-banner"><div class="cd-label">下一次过境 · ' +
+        new Date(next.start).toLocaleString('zh-CN', { month: 'long', day: 'numeric' }) + ' ' + sdFmtTime(new Date(next.start)) + '</div>' +
+        '<div class="cd-val" id="issPassCd">--</div>' +
+        '<div class="cd-sub">最大高度 ' + next.maxEl.toFixed(0) + '° · ' + dirs[Math.round(next.azMax / 45) % 8] + '方向</div></div>';
+
+    passes.slice(0, 8).forEach(function(p, idx) {
+        var d = new Date(p.start);
+        var dur = p.end - p.start;
+        var times = sdSunTimes(d, obs.lat, obs.lng);
+        var isDark = (d.getTime() > times.astroDusk.getTime()) || (d.getTime() < times.sunrise.getTime() - 90 * 60000);
+        var darkBadge = isDark
+            ? '<span class="ps-badge" style="background:rgba(64,255,136,0.12);color:#40ff88;">🌙 暗夜 · 肉眼可见</span>'
+            : '<span class="ps-badge" style="background:rgba(251,191,36,0.1);color:#fbbf24;">☀️ 白天/黄昏 · 较难目视</span>';
+        html += '<div class="sd-pass-card' + (idx === 0 ? ' next' : '') + '">' +
+            '<div class="ps-head"><span class="ps-time">' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + sdFmtTime(d) + '</span>' + darkBadge + '</div>' +
+            '<div class="ps-grid">' +
+            '<span>最大高度 <strong>' + p.maxEl.toFixed(0) + '°</strong></span>' +
+            '<span>方向 <strong>' + dirs[Math.round(p.azMax / 45) % 8] + '</strong></span>' +
+            '<span>持续 <strong>' + sdFmtDur(dur) + '</strong></span>' +
+            '</div></div>';
+    });
+    html += '<div class="sd-note">💡 高度角 ≥10° 的过境才会列出。白天过境时 ISS 同样在天上飞，但阳光太亮肉眼看不到；黄昏/黎明的过境最容易看到一颗「不眨眼的星」划过夜空。</div>';
+    panel.innerHTML = html;
+
+    // 倒计时每秒刷新
+    if (issPassCdTimer) clearInterval(issPassCdTimer);
+    issPassCdTimer = setInterval(function() {
+        var el = document.getElementById('issPassCd');
+        if (!el) { if (issPassCdTimer) clearInterval(issPassCdTimer); issPassCdTimer = null; return; }
+        var diff = next.start - Date.now();
+        el.textContent = diff <= 0 ? '正在过境！抬头看！' : sdFmtDur(diff) + ' 后';
+    }, 1000);
+}
+
+// ==================== 🌌 极光预报 (NOAA SWPC) ====================
+var kpBands = [
+    { max: 1.9, lat: '~67°N', label: '极光活动平静', places: '冰岛北部 · 挪威特罗姆瑟 · 阿拉斯加费尔班克斯' },
+    { max: 2.9, lat: '~66°N', label: '微弱活动', places: '雷克雅未克 · 罗瓦涅米 · 摩尔曼斯克' },
+    { max: 3.9, lat: '~62°N', label: '轻度活动', places: '赫尔辛基 · 安克雷奇 · 漠河（需高值配合）' },
+    { max: 4.9, lat: '~58°N', label: '中度活动', places: '爱丁堡 · 莫斯科 · 奥斯陆' },
+    { max: 5.9, lat: '~55°N', label: 'G1 弱磁暴', places: '哥本哈根 · 塔林 · 阿伯丁' },
+    { max: 6.9, lat: '~52°N', label: 'G2 中等磁暴', places: '伦敦 · 华沙 · 温哥华' },
+    { max: 7.9, lat: '~48°N', label: 'G3 强磁暴', places: '巴黎 · 西雅图 · 多伦多' },
+    { max: 8.9, lat: '~42°N', label: 'G4 严重磁暴', places: '纽约 · 罗马 · 马德里' },
+    { max: 99,  lat: '<40°N', label: 'G5 极端磁暴', places: '开罗 · 休斯顿 · 上海 · 东京' }
+];
+var kpSegColors = ['#40ff88', '#40ff88', '#a3e635', '#fbbf24', '#fb923c', '#f87171', '#f87171', '#fb7185', '#f43f5e'];
+
+function sdKpLevel(kp) {
+    if (kp >= 9) return { label: 'G5 极端磁暴', color: '#f43f5e' };
+    if (kp >= 8) return { label: 'G4 严重磁暴', color: '#fb7185' };
+    if (kp >= 7) return { label: 'G3 强磁暴', color: '#f87171' };
+    if (kp >= 6) return { label: 'G2 中等磁暴', color: '#fb923c' };
+    if (kp >= 5) return { label: 'G1 弱磁暴', color: '#fbbf24' };
+    if (kp >= 4) return { label: '中度活动', color: '#a3e635' };
+    if (kp >= 2) return { label: '轻度活动', color: '#40ff88' };
+    return { label: '极光活动平静', color: '#40ff88' };
+}
+function sdParseUTC(s) {
+    if (/Z|[+-]\d\d:?\d\d$/.test(s)) return new Date(s);
+    return new Date(s.replace(' ', 'T') + 'Z');
+}
+
+async function loadAurora() {
+    var panel = document.getElementById('auroraPanel');
+    if (!panel) return;
+    if (window._sdAuroraTime && Date.now() - window._sdAuroraTime < 30 * 60000) {
+        renderAurora(panel, window._sdAuroraObs, window._sdAuroraFc);
+        return;
+    }
+    panel.innerHTML = '<div style="text-align:center;padding:40px;color:#667788;">🌌 正在获取 NOAA 空间天气数据...</div>';
+    try {
+        var obsResp = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+        if (!obsResp.ok) throw new Error('NOAA 观测数据获取失败: ' + obsResp.status);
+        var obsJson = await obsResp.json();
+        var fcJson = null;
+        try {
+            var fcResp = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json');
+            if (fcResp.ok) fcJson = await fcResp.json();
+        } catch (e2) {}
+        window._sdAuroraObs = obsJson;
+        window._sdAuroraFc = fcJson;
+        window._sdAuroraTime = Date.now();
+        renderAurora(panel, obsJson, fcJson);
+    } catch (e) {
+        panel.innerHTML = '<div style="text-align:center;padding:40px;color:#ff4060;">⚠️ ' + escapeHtml(e.message || '加载失败') +
+            '<br><button onclick="loadAurora()" style="margin-top:12px;padding:8px 20px;background:rgba(91,143,255,0.15);border:1px solid rgba(91,143,255,0.3);color:#5b8fff;border-radius:8px;cursor:pointer;">重试</button></div>';
+    }
+}
+
+function renderAurora(panel, obsJson, fcJson) {
+    var obsVals = [];
+    (obsJson || []).forEach(function(row) {
+        var kp = (typeof row === 'object' && row) ? (row.Kp !== undefined ? row.Kp : row.kp) : null;
+        if (typeof kp === 'number' && !isNaN(kp)) obsVals.push({ t: sdParseUTC(row.time_tag), kp: kp });
+    });
+    obsVals.sort(function(a, b) { return a.t - b.t; });
+    var recent = obsVals.slice(-9);
+    var current = recent.length ? recent[recent.length - 1] : null;
+
+    var html = '';
+    if (current) {
+        var level = sdKpLevel(current.kp);
+        var band = null;
+        for (var bi = 0; bi < kpBands.length; bi++) { if (current.kp <= kpBands[bi].max) { band = kpBands[bi]; break; } }
+        html += '<div class="sd-kp-value-row"><span class="kp-num">Kp ' + current.kp.toFixed(1) + '</span>' +
+            '<span class="kp-level" style="background:' + level.color + '22;color:' + level.color + ';border:1px solid ' + level.color + '55;">' + level.label + '</span>' +
+            '<span style="font-size:0.7rem;color:#556677;">' + sdFmtTime(current.t) + ' 观测</span></div>';
+        html += '<div class="sd-kp-gauge">';
+        for (var s = 0; s < 9; s++) {
+            var on = current.kp >= s + 1;
+            var frac = Math.max(0, Math.min(1, current.kp - s));
+            html += '<div class="sd-kp-seg" style="' + (on ? 'background:' + kpSegColors[s] + ';' : (frac > 0 ? 'background:' + kpSegColors[s] + '55;' : '')) + '"></div>';
+        }
+        html += '</div>';
+        html += '<div style="display:flex;justify-content:space-between;font-size:0.62rem;color:#556677;margin-bottom:12px;"><span>0 安静</span><span>4 中等</span><span>9 极端</span></div>';
+
+        if (band) {
+            html += '<div class="sd-aurora-loc active"><span class="a-lat">' + band.lat + '</span>' +
+                '<span class="a-desc">当前极光可见南界约在 <strong style="color:#40ff88;">' + band.lat + '</strong> 纬度带 · ' + escapeHtml(band.label) + '</span></div>';
+            html += '<div class="sd-aurora-loc"><span class="a-lat">🌍</span><span class="a-desc">当前纬度带代表观测地：' + escapeHtml(band.places) + '</span></div>';
+        }
+    } else {
+        html += '<div class="sd-empty-tip">暂无有效 Kp 观测数据</div>';
+    }
+
+    // 过去 24h 观测趋势
+    if (recent.length > 1) {
+        html += '<div class="sd-section-title">📉 过去 24 小时 Kp 观测</div><div class="sd-trend-row">';
+        recent.forEach(function(v) {
+            var h = Math.min(1, v.kp / 9);
+            html += '<div class="sd-trend-col"><div class="sd-trend-bar" style="height:' + Math.max(6, h * 44) + 'px;background:' + sdKpLevel(v.kp).color + 'cc;" title="Kp ' + v.kp.toFixed(2) + '"></div><div class="sd-trend-label">' + sdFmtTime(v.t).slice(0, 2) + '时</div></div>';
+        });
+        html += '</div>';
+    }
+
+    // 未来 24h 预报
+    if (fcJson && fcJson.length) {
+        var now = Date.now();
+        var fc = [];
+        for (var fi = 0; fi < fcJson.length; fi++) {
+            var row = fcJson[fi];
+            var kp = (typeof row === 'object' && row) ? (row.kp !== undefined ? row.kp : row.Kp) : null;
+            if (typeof kp !== 'number' || isNaN(kp)) continue;
+            var t = sdParseUTC(row.time_tag);
+            if (t.getTime() > now && fc.length < 8) fc.push({ t: t, kp: kp });
+        }
+        if (fc.length) {
+            var maxFc = fc.reduce(function(a, b) { return b.kp > a.kp ? b : a; });
+            html += '<div class="sd-section-title">🔮 未来 24 小时 Kp 预报</div><div class="sd-trend-row">';
+            fc.forEach(function(v) {
+                var h2 = Math.min(1, v.kp / 9);
+                html += '<div class="sd-trend-col"><div class="sd-trend-bar" style="height:' + Math.max(6, h2 * 44) + 'px;background:' + sdKpLevel(v.kp).color + '88;" title="Kp ' + v.kp.toFixed(2) + '"></div><div class="sd-trend-label">' + sdFmtTime(v.t).slice(0, 2) + '时</div></div>';
+            });
+            html += '</div>';
+            html += '<div style="font-size:0.72rem;color:#667788;margin-top:4px;">未来 24h 预计最高 Kp <strong style="color:' + sdKpLevel(maxFc.kp).color + ';">' + maxFc.kp.toFixed(1) + '</strong>（' + sdFmtTime(maxFc.t) + '）</div>';
+        }
+    }
+
+    html += '<div class="sd-note">🇨🇳 中国大陆处于中低磁纬，常规情况下看不到极光。当 Kp ≥ 5 时，漠河、新疆阿勒泰等高磁纬地区有机会目视极光。极光实际可见性还取决于当地天气、光污染与极光椭圆区位置。</div>';
     panel.innerHTML = html;
 }
 

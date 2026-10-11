@@ -4066,6 +4066,95 @@ hr, .divider {
             background: rgba(91, 143, 255, 0.04);
         }
 
+        /* --- Tonight's Sky / ISS Pass / Aurora panels --- */
+        .tonight-panel, .ispass-panel, .aurora-panel { padding: 4px 2px; }
+        .sd-loc-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            font-size: 0.75rem; color: #667788; margin-bottom: 10px;
+            background: rgba(91, 143, 255, 0.04); border: 1px solid rgba(91, 143, 255, 0.1);
+            border-radius: 8px; padding: 6px 12px;
+        }
+        .sd-loc-row button {
+            background: rgba(91, 143, 255, 0.12); border: 1px solid rgba(91, 143, 255, 0.25);
+            color: #5b8fff; border-radius: 6px; padding: 3px 10px; cursor: pointer;
+            font-size: 0.72rem; font-family: inherit; transition: background 0.2s;
+        }
+        .sd-loc-row button:hover { background: rgba(91, 143, 255, 0.22); }
+        .sd-stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+        .sd-stat-tile {
+            text-align: center; padding: 10px 4px;
+            background: rgba(91, 143, 255, 0.05); border: 1px solid rgba(91, 143, 255, 0.12);
+            border-radius: 10px;
+        }
+        .sd-stat-tile .t-icon { font-size: 1.25rem; }
+        .sd-stat-tile .t-val { font-size: 0.9rem; font-weight: 700; color: #ccdde8; margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .sd-stat-tile .t-label { font-size: 0.66rem; color: #667788; margin-top: 2px; }
+        .sd-section-title {
+            font-size: 0.7rem; color: #556677; text-transform: uppercase; letter-spacing: 1.5px;
+            margin: 16px 0 8px; font-weight: 600;
+        }
+        .sd-moon-banner {
+            display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+            background: rgba(148, 163, 184, 0.06); border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 10px;
+        }
+        .sd-moon-banner .m-emoji { font-size: 2.3rem; flex-shrink: 0; }
+        .sd-moon-banner .m-name { color: #ccdde8; font-weight: 700; font-size: 0.95rem; }
+        .sd-moon-banner .m-sub { color: #667788; font-size: 0.78rem; margin-top: 2px; }
+        .sd-moon-banner .m-tip { font-size: 0.72rem; margin-top: 4px; }
+        .sd-planet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+        .sd-planet-card { padding: 10px 12px; border-radius: 10px; }
+        .sd-planet-card .p-name { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; }
+        .sd-planet-card .p-alt { color: #ccdde8; font-family: 'Courier New', monospace; font-size: 0.78rem; margin-top: 4px; }
+        .sd-planet-card .p-sub { color: #667788; font-size: 0.7rem; margin-top: 2px; }
+        .sd-dso-row {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px;
+            background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 6px;
+        }
+        .sd-dso-row .d-emoji { font-size: 1.2rem; flex-shrink: 0; }
+        .sd-dso-row .d-name { color: #ccdde8; font-size: 0.85rem; font-weight: 600; }
+        .sd-dso-row .d-sub { color: #667788; font-size: 0.7rem; margin-top: 1px; }
+        .sd-dso-row .d-tip { color: #556677; font-size: 0.7rem; text-align: right; max-width: 130px; flex-shrink: 0; line-height: 1.3; }
+        .sd-pass-card {
+            background: rgba(91, 143, 255, 0.05); border: 1px solid rgba(91, 143, 255, 0.12);
+            border-radius: 10px; padding: 10px 14px; margin-bottom: 8px;
+        }
+        .sd-pass-card.next { border-color: rgba(64, 255, 136, 0.35); background: rgba(64, 255, 136, 0.05); }
+        .sd-pass-card .ps-head { display: flex; justify-content: space-between; align-items: center; }
+        .sd-pass-card .ps-time { color: #ccdde8; font-weight: 700; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+        .sd-pass-card .ps-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; }
+        .sd-pass-card .ps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; font-size: 0.74rem; color: #8899aa; }
+        .sd-pass-card .ps-grid strong { color: #ccdde8; }
+        .sd-countdown-banner {
+            text-align: center; padding: 14px; margin-bottom: 12px;
+            background: rgba(64, 255, 136, 0.06); border: 1px solid rgba(64, 255, 136, 0.25);
+            border-radius: 12px;
+        }
+        .sd-countdown-banner .cd-label { font-size: 0.75rem; color: #667788; }
+        .sd-countdown-banner .cd-val { font-size: 1.4rem; font-weight: 800; color: #40ff88; font-variant-numeric: tabular-nums; margin-top: 4px; }
+        .sd-countdown-banner .cd-sub { font-size: 0.72rem; color: #8899aa; margin-top: 4px; }
+        .sd-kp-gauge { display: flex; gap: 3px; margin: 10px 0 6px; }
+        .sd-kp-seg { flex: 1; height: 12px; border-radius: 3px; background: rgba(255,255,255,0.05); }
+        .sd-kp-value-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+        .sd-kp-value-row .kp-num { font-size: 2rem; font-weight: 800; color: #ccdde8; }
+        .sd-kp-value-row .kp-level { font-size: 0.85rem; font-weight: 700; padding: 2px 10px; border-radius: 8px; }
+        .sd-aurora-loc {
+            display: flex; align-items: center; gap: 8px; padding: 9px 12px; margin-bottom: 6px;
+            background: rgba(52, 211, 153, 0.05); border: 1px solid rgba(52, 211, 153, 0.15); border-radius: 10px;
+        }
+        .sd-aurora-loc .a-lat { color: #40ff88; font-weight: 700; font-size: 0.85rem; min-width: 64px; }
+        .sd-aurora-loc .a-desc { color: #8899aa; font-size: 0.76rem; }
+        .sd-aurora-loc.active { border-color: rgba(52, 211, 153, 0.45); background: rgba(52, 211, 153, 0.1); }
+        .sd-trend-row { display: flex; align-items: flex-end; gap: 4px; height: 56px; padding: 4px 2px; }
+        .sd-trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .sd-trend-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; min-height: 3px; }
+        .sd-trend-label { font-size: 0.6rem; color: #556677; white-space: nowrap; }
+        .sd-note {
+            font-size: 0.72rem; color: #667788; background: rgba(91, 143, 255, 0.04);
+            border: 1px solid rgba(91, 143, 255, 0.1); border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.5;
+        }
+        .sd-empty-tip { text-align: center; padding: 24px 12px; color: #667788; font-size: 0.82rem; }
+
         /* --- Moon phase panel --- */
         .moon-panel { text-align: center; padding: 12px; }
         .moon-visual {
@@ -4625,6 +4714,9 @@ if (typeof supabase === 'undefined') {
                 <button class="sd-tab" onclick="switchSDTab('eclipses', this)">日食月食</button>
                 <button class="sd-tab" onclick="switchSDTab('launches', this)">🚀 发射任务</button>
                 <button class="sd-tab" onclick="switchSDTab('nasaeys', this)">🌐 3D太阳系</button>
+                <button class="sd-tab" onclick="switchSDTab('tonight', this)">🌃 今夜星空</button>
+                <button class="sd-tab" onclick="switchSDTab('isspass', this)">⏰ ISS过境</button>
+                <button class="sd-tab" onclick="switchSDTab('aurora', this)">🌌 极光预报</button>
             </div>
             <div class="space-data-body space-data-body-inline">
                 <div class="sd-panel active" id="sdPanel-iss">
@@ -4671,6 +4763,15 @@ if (typeof supabase === 'undefined') {
                         <div class="nasa-eyes-tip">数据来源：NASA Eyes</div>
                         <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
                     </div>
+                </div>
+                <div class="sd-panel" id="sdPanel-tonight">
+                    <div class="tonight-panel" id="tonightPanel">点击加载今夜星空...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-isspass">
+                    <div class="ispass-panel" id="issPassPanel">点击加载ISS过境预报...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-aurora">
+                    <div class="aurora-panel" id="auroraPanel">点击加载极光预报...</div>
                 </div>
             </div>
             <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：whertheiss.at 实时卫星定位 API</div>
