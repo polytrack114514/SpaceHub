@@ -87,9 +87,16 @@ function getStreak(user) {
     return r ? (r.streak || 0) : 0;
 }
 
-function frameShadowValue(css) {
-    if (!css) return '';
-    return String(css).replace(/^\s*box-shadow\s*:\s*/i, '');
+/* 把「完整声明列表」逐条注入元素，例如 "box-shadow:...;animation:ck-pulse 2.4s infinite" */
+function applyDecls(el, css) {
+    if (!css) return;
+    String(css).split(';').forEach(function(decl) {
+        var i = decl.indexOf(':');
+        if (i <= 0) return;
+        var prop = decl.slice(0, i).trim();
+        var val = decl.slice(i + 1).trim();
+        if (prop && val) el.style.setProperty(prop, val, 'important');
+    });
 }
 
 window.getStreak = getStreak;
@@ -102,13 +109,13 @@ window.applyRewardStyles = function(root) {
         .forEach(function(el) {
             var css = getFrameCss(el.getAttribute('data-author'));
             if (!css) return;
-            el.style.setProperty('box-shadow', frameShadowValue(css), 'important');
+            applyDecls(el, css);
             el.style.setProperty('border-radius', '50%', 'important');
         });
     // 帖子背景
     root.querySelectorAll('.post-card[data-author]').forEach(function(el) {
         var bg = getPostBgCss(el.getAttribute('data-author'));
-        if (bg) el.style.setProperty('background', bg, 'important');
+        if (bg) applyDecls(el, bg);
     });
 };
 
@@ -180,11 +187,6 @@ function renderCheckinModal() {
     renderCKBody();
 }
 
-function previewStyle(it) {
-    if (it.type === 'avatar_frame') return frameShadowValue(it.css);
-    return 'background:' + it.css + ';';
-}
-
 function avatarInner(name) {
     var av = getAvatar(name);
     return (av && av.indexOf('http') === 0)
@@ -219,9 +221,12 @@ function renderShopHtml() {
             var on = equipped[g[0]] === it.id;
             html += '<div class="ck-item' + (on ? ' equipped' : '') + '">';
             html += '<div class="ck-item-preview ' + (it.type === 'avatar_frame' ? 'ck-prev-frame' : 'ck-prev-bg')
-                + '" style="' + previewStyle(it) + '"></div>';
+                + '" style="' + it.css + '"></div>';
             html += '<div class="ck-item-name">' + escapeHtml(it.name) + '</div>';
             html += '<div class="ck-item-cost">' + it.cost + ' 点</div>';
+            if (String(it.css).indexOf('animation:') >= 0) {
+                html += '<div class="ck-item-tag">✨ 动态</div>';
+            }
             if (on) {
                 html += '<button class="ck-btn on" onclick="equipReward(\'' + g[0] + '\', null)">卸下</button>';
             } else if (has) {
