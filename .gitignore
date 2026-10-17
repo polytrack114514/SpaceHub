@@ -7,3 +7,7 @@ supabase/.temp/
 supabase/supabase/
 *.png
 supabase_query.js
+
+# IDE / 工具生成的构建产物与临时上传（不应提交）
+.trae-html-share-packages/
+.uploads/
