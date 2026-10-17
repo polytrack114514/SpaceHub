@@ -62,9 +62,9 @@ window.loadCheckinData = async function() {
     await loadUserRewards();
     if (currentUser && getSessionToken()) await refreshMyStatus();
     refreshCheckinHeader();
-    // 数据到位后重渲染，让头像框 / 帖子背景生效
-    if (window.posts && posts.length && window.renderPosts) window.renderPosts();
+    // 顶部头像重建后统一重新应用装饰样式，保证一进入页面就能看到头像框 / 帖子背景
     if (window.renderAuthArea) window.renderAuthArea();
+    if (window.applyRewardStyles) window.applyRewardStyles(document);
 };
 
 /* ---------- 供渲染器使用 ---------- */
@@ -291,7 +291,6 @@ window.doDailyCheckin = async function() {
         await refreshMyStatus();
         renderCheckinModal();
         refreshCheckinHeader();
-        if (window.posts && posts.length && window.renderPosts) window.renderPosts();
     } catch (e) {
         console.error('[签到] 签到失败:', e);
         ckToast('签到失败：' + e.message);
@@ -330,8 +329,8 @@ window.equipReward = async function(type, itemId) {
         ckToast(itemId ? '已佩戴' : '已卸下');
         await refreshMyStatus();
         renderCheckinModal();
-        if (window.posts && posts.length && window.renderPosts) window.renderPosts();
         if (window.renderAuthArea) window.renderAuthArea();
+        if (window.applyRewardStyles) window.applyRewardStyles(document);
         var pm = document.getElementById('profileModal');
         if (pm && pm.classList.contains('show') && pm.dataset.username && window.showUserProfile) {
             window.showUserProfile(pm.dataset.username);
