@@ -79,10 +79,8 @@ SpaceHub 星枢 是一个以太空探索为主题的社区平台，融合了**�
 
 ```
 SpaceHub/
-├── index.html                  # 主页面（社区 + 太空数据中心）
-├── sign-up.html                # 注册页
-├── css/
-│   └── main.css                # 全部样式
+├── index.html                  # 主页面（社区 + 太空数据中心，样式内联于 <style>）
+├── sign-up.html                # 注册页（样式内联于 <style>）
 ├── js/
 │   ├── config.js               # 全局状态、Supabase 初始化、工具函数
 │   ├── auth.js                 # 登录 / 登出 / 用户资料
