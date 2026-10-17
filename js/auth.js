@@ -29,19 +29,22 @@ window.renderAuthArea = function() {
             : '';
         area.innerHTML =
             '<div class="auth-user">'
-            + '<div class="auth-avatar-small">' + avHtml + '</div>'
+            + '<div class="auth-avatar-small" data-author="' + escapeHtml(currentUser.name) + '">' + avHtml + '</div>'
             + '<span class="auth-name" style="cursor:pointer;" onclick="showUserProfile(\'' + escapeHtml(currentUser.name) + '\')">' + escapeHtml(currentUser.name) + '</span>'
             + badge
             + '<button class="btn-logout" onclick="showUserProfile(\'' + escapeHtml(currentUser.name) + '\')" style="margin-right:6px;">👤 我的主页</button>'
             + '<button class="btn-logout" onclick="handleLogout()">退出</button>'
             + '</div>';
         window.renderLaunchControls && window.renderLaunchControls();
+        window.applyRewardStyles && window.applyRewardStyles(area);
+        window.refreshCheckinHeader && window.refreshCheckinHeader();
         var adminBtn = document.getElementById('adminEntryBtn');
         if (adminBtn) adminBtn.style.display = 'inline-flex';
     } else {
         area.innerHTML =
             '<button class="btn-auth" onclick="openAuthModal()">登录</button>'
             + '<button class="btn-auth" onclick="window.location.href=\'./sign-up.html\'">注册</button>';
+        window.refreshCheckinHeader && window.refreshCheckinHeader();
     }
 };
 
@@ -238,9 +241,9 @@ window.showUserProfile = function(username) {
         postsHtml = '<div class="profile-posts"><div class="profile-posts-title">TA的帖子 (' + userPosts.length + ')</div>';
         userPosts.forEach(function(post) {
             var isLiked = likedPosts[post.id] || false;
-            postsHtml += '<div class="post-card" data-id="' + post.id + '">';
+            postsHtml += '<div class="post-card" data-id="' + post.id + '" data-author="' + escapeHtml(post.author) + '">';
             postsHtml += '<div class="post-header"><div class="post-author">';
-            postsHtml += '<div class="avatar">' + (post.avatar && post.avatar.startsWith('http') ? '<img src="' + escapeHtml(post.avatar) + '" alt="avatar" loading="lazy" decoding="async">' : escapeHtml(post.avatar || '🌟')) + '</div>';
+            postsHtml += '<div class="avatar" data-author="' + escapeHtml(post.author) + '">' + (post.avatar && post.avatar.startsWith('http') ? '<img src="' + escapeHtml(post.avatar) + '" alt="avatar" loading="lazy" decoding="async">' : escapeHtml(post.avatar || '🌟')) + '</div>';
             postsHtml += '<div class="author-info"><span class="author-name" style="cursor:pointer;" onclick="showUserProfile(\'' + escapeHtml(post.author) + '\')">' + escapeHtml(post.author) + '</span>';
             postsHtml += '<span class="post-time">' + formatTime(post.time) + '</span></div></div></div>';
             postsHtml += (post.title ? '<div class="post-title">' + (post.pinned ? '📌 ' : '') + escapeHtml(post.title) + '</div>' : '');
@@ -252,15 +255,18 @@ window.showUserProfile = function(username) {
     } else {
         postsHtml = '<div class="empty-state"><p>暂无帖子</p></div>';
     }
+    var streak = window.getStreak ? window.getStreak(username) : 0;
+    var streakHtml = streak > 0 ? '<span>🔥 连续签到 ' + streak + ' 天</span>' : '';
     contentDiv.innerHTML =
         '<div class="profile-header">'
-        + '<div class="profile-avatar">' + avHtml + '</div>'
+        + '<div class="profile-avatar" data-author="' + escapeHtml(username) + '">' + avHtml + '</div>'
         + '<div class="profile-info">'
         + '<h2>' + escapeHtml(username) + ' ' + badge + '</h2>'
-        + '<div class="profile-stats"><span>帖子 ' + userPosts.length + '</span><span>获赞 ' + totalLikes + '</span></div>'
+        + '<div class="profile-stats"><span>帖子 ' + userPosts.length + '</span><span>获赞 ' + totalLikes + '</span>' + streakHtml + '</div>'
         + '</div></div>'
         + postsHtml
         + '<div style="text-align:center;margin-top:16px;"><button class="btn-auth" onclick="closeProfileModal()">关闭</button></div>';
+    if (window.applyRewardStyles) window.applyRewardStyles(contentDiv);
     modal.classList.add('show');
 };
 

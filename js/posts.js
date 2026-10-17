@@ -415,8 +415,8 @@ window.renderPosts = function() {
             ? '<div class="post-source"><span class="source-label">📄 内容来源：</span><a href="' + escapeHtml(post.source_url) + '" target="_blank" rel="noopener noreferrer" class="source-link">' + escapeHtml(post.source_url.length > 60 ? post.source_url.substring(0, 60) + '...' : post.source_url) + '</a></div>'
             : '';
 
-        return '<div class="post-card" data-id="' + post.id + '">'
-            + '<div class="post-header"><div class="post-author"><div class="avatar" style="cursor:pointer;" onclick="showUserProfile(\'' + escapeHtml(post.author) + '\')">' + avHtml + '</div>'
+        return '<div class="post-card" data-id="' + post.id + '" data-author="' + escapeHtml(post.author) + '">'
+            + '<div class="post-header"><div class="post-author"><div class="avatar" data-author="' + escapeHtml(post.author) + '" style="cursor:pointer;" onclick="showUserProfile(\'' + escapeHtml(post.author) + '\')">' + avHtml + '</div>'
             + '<div class="author-info"><span class="author-name" style="cursor:pointer;" onclick="showUserProfile(\'' + escapeHtml(post.author) + '\')">'
             + escapeHtml(post.author) + ' ' + badge + '</span>'
             + '<span class="post-time">' + formatTime(post.time) + '</span></div></div>'
@@ -436,6 +436,7 @@ window.renderPosts = function() {
     }).join('');
 
     list.innerHTML = html;
+    if (window.applyRewardStyles) window.applyRewardStyles(list);
 
     if (displayPosts.length > displayCount) {
         list.innerHTML += '<div style="text-align:center;padding:16px;"><button class="load-more-btn" onclick="loadMorePosts()" style="padding:10px 32px;background:rgba(91,143,255,0.12);border:1px solid rgba(91,143,255,0.3);color:#5b8fff;border-radius:24px;cursor:pointer;font-size:0.9rem;">加载更多 (还有 ' + (displayPosts.length - displayCount) + ' 条)</button></div>';

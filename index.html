@@ -4701,6 +4701,7 @@ if (typeof supabase === 'undefined') {
                 <button class="search-clear" id="searchClear" onclick="clearSearch()">×</button>
             </div>
                                     <button class="notify-btn" id="notifyBtn" onclick="openNotifyModal()" title="消息通知">🔔<span class="notify-badge" id="notifyBadge" style="display:none;">0</span></button>
+                <button class="checkin-btn" id="checkinBtn" onclick="openCheckinModal()" title="每日签到" style="display:none;">📅<span class="checkin-dot" id="checkinDot" style="display:none;"></span></button>
                         <div class="auth-area" id="authArea">
                 <button class="btn-auth" onclick="openAuthModal()">登录</button>
                 <button class="btn-auth" onclick="window.location.href='./sign-up.html'">注册</button>
@@ -4882,6 +4883,28 @@ if (typeof supabase === 'undefined') {
             <div id="profileContent"></div>
         </div>
     </div>
+    <!-- 每日签到 / 装饰商店弹窗 -->
+    <div class="checkin-modal-overlay" id="checkinModal">
+        <div class="checkin-modal">
+            <button class="checkin-close" onclick="closeCheckinModal()">&times;</button>
+            <div class="checkin-header">
+                <div class="checkin-title">📅 每日签到</div>
+                <div class="checkin-points">探索点数 <b id="ckPoints">0</b></div>
+            </div>
+            <div class="checkin-streak-card">
+                <div class="checkin-streak-num" id="ckStreakNum">0</div>
+                <div class="checkin-streak-label">已连续签到（天）</div>
+                <div class="checkin-streak-sub" id="ckNextAward">今日可得 +10 分</div>
+                <div class="checkin-best" id="ckBestStreak"></div>
+            </div>
+            <button class="checkin-action-btn" id="ckActionBtn" onclick="doDailyCheckin()">立即签到</button>
+            <div class="checkin-tabs">
+                <button class="ck-tab active" onclick="switchCKTab('shop', this)">🎁 装饰商店</button>
+                <button class="ck-tab" onclick="switchCKTab('mine', this)">👤 我的装扮</button>
+            </div>
+            <div class="checkin-body" id="ckBody"></div>
+        </div>
+    </div>
     <!-- 通知弹窗 -->
     <div class="notification-modal-overlay" id="notifyModal">
         <div class="notification-modal">
@@ -4947,6 +4970,7 @@ if (typeof supabase === 'undefined') {
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/posts.js"></script>
+<script src="js/checkin.js"></script>
 <script src="js/comments.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/launches.js"></script>
@@ -4979,6 +5003,9 @@ if (currentUser) {
 }
 loadOnlineUsers();
 setInterval(loadOnlineUsers, 30000);
+
+// 每日签到 / 装饰物
+loadCheckinData();
 
 // 发射提醒检查
 startLaunchNotifyChecker();
