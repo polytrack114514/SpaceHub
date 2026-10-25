@@ -107,6 +107,7 @@ window.switchSDTab = function(tab, btn) {
 }
 var issTimer = null;
 var issTrack = [];
+var issHasData = false;
 async function loadISSData() {
     try {
         var resp = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
@@ -117,6 +118,7 @@ async function loadISSData() {
         el = document.getElementById('issLng'); if (el) el.textContent = lng.toFixed(2) + ' deg';
         el = document.getElementById('issAlt'); if (el) el.textContent = alt.toFixed(1) + ' km';
         el = document.getElementById('issVel'); if (el) el.textContent = (vel / 3600).toFixed(2) + ' km/s';
+        issHasData = true;
         var x = ((lng + 180) / 360) * 100;
         var y = ((90 - lat) / 180) * 100;
         var marker = document.getElementById('issMarker');
@@ -126,7 +128,13 @@ async function loadISSData() {
         renderISSTrack();
     } catch(e) {
         console.error('ISS data error:', e);
-        var el2 = document.getElementById('issLat'); if (el2) el2.textContent = '获取失败';
+        // 保留上一次的有效数值；首次连接失败时提示自动重试，而不是显示「获取失败」
+        if (!issHasData) {
+            ['issLat', 'issLng', 'issAlt', 'issVel'].forEach(function(id) {
+                var node = document.getElementById(id);
+                if (node) node.textContent = '连接中…';
+            });
+        }
     }
 }
 function renderISSTrack() {
