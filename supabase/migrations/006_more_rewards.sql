@@ -37,9 +37,9 @@ INSERT INTO reward_items (id, name, type, cost, css, preview, sort_order) VALUES
     ('frame_heartbeat', '心跳金环',   'avatar_frame',  700, 'animation:ck-heartbeat 1.6s ease-in-out infinite',                              '跳', 120),
     ('frame_liquid',    '液态玻璃环', 'avatar_frame',  900, 'animation:ck-liquid-ring 5s ease-in-out infinite',                              '璃', 130),
     -- ---------- 动态帖子背景（新增 3 款） ----------
-    ('bg_flow_nebula',  '流动星云',   'post_bg',        800, 'background:linear-gradient(120deg, #1b2470 0%, #4a1f7a 38%, #2b1a66 62%, #1b2470 100%);background-size:240% 240%;animation:ck-flow-nebula 14s ease-in-out infinite', '流', 110),
-    ('bg_flow_aurora',  '流动极光',   'post_bg',       1000, 'background:linear-gradient(120deg, #0b3a52 0%, #1d7a63 32%, #2a1f4a 64%, #0b3a52 100%);background-size:240% 240%;animation:ck-flow-aurora 16s ease-in-out infinite', '动', 120),
-    ('bg_liquid',       '液态玻璃',   'post_bg',       1200, 'background:linear-gradient(115deg, rgba(160,210,255,0.16) 0%, rgba(255,255,255,0.05) 38%, rgba(190,225,255,0.18) 68%, rgba(160,210,255,0.16) 100%);background-size:240% 240%;backdrop-filter:blur(14px) saturate(1.35);animation:ck-liquid-panel 12s ease-in-out infinite', '玻', 130)
+    ('bg_flow_nebula',  '流动星云',   'post_bg',        800, 'background-image:linear-gradient(120deg, #1b2470 0%, #4a1f7a 38%, #2b1a66 62%, #1b2470 100%);background-size:240% 240%;background-repeat:no-repeat;animation:ck-flow-nebula 14s ease-in-out infinite', '流', 110),
+    ('bg_flow_aurora',  '流动极光',   'post_bg',       1000, 'background-image:linear-gradient(120deg, #0b3a52 0%, #1d7a63 32%, #2a1f4a 64%, #0b3a52 100%);background-size:240% 240%;background-repeat:no-repeat;animation:ck-flow-aurora 16s ease-in-out infinite', '动', 120),
+    ('bg_liquid',       '液态玻璃',   'post_bg',       1200, 'background-image:linear-gradient(115deg, rgba(160,210,255,0.16) 0%, rgba(255,255,255,0.05) 38%, rgba(190,225,255,0.18) 68%, rgba(160,210,255,0.16) 100%);background-size:240% 240%;background-repeat:no-repeat;backdrop-filter:blur(14px) saturate(1.35);animation:ck-liquid-panel 12s ease-in-out infinite', '玻', 130)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     type = EXCLUDED.type,
