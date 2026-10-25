@@ -60,6 +60,45 @@ var sdSources = {
 };
 var sdCurrentTab = 'iss';
 
+// 数据可信度徽章：标注每块数据的性质（实时 / 计算 / 静态）与更新时间
+var sdTrustMeta = {
+    iss:       { kind: 'live',   label: '实时',      note: 'wheretheiss.at 卫星定位 API' },
+    moon:      { kind: 'calc',   label: '本地计算',  note: '平均朔望月推算，个别月份可能差半天' },
+    asteroids: { kind: 'live',   label: '实时',      note: 'NASA NeoWs 近地天体数据' },
+    crew:      { kind: 'sync',   label: '定时同步',  note: '每 6 小时同步，失败时保留上次数据' },
+    meteors:   { kind: 'static', label: '静态数据',  note: 'IMO 年周期流星雨资料' },
+    eclipses:  { kind: 'static', label: '静态数据',  note: '已按 NASA 官方目录校对' },
+    launches:  { kind: 'live',   label: '实时',      note: 'The Space Devs Launch Library 2' },
+    nasaeys:   { kind: 'live',   label: '官方嵌入',  note: 'NASA Eyes on the Solar System' },
+    tonight:   { kind: 'mix',    label: '计算 + 实时', note: '行星位置本地推算；云量来自 Open-Meteo' },
+    isspass:   { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' },
+    aurora:    { kind: 'live',   label: '实时',      note: 'NOAA SWPC 空间天气数据' },
+    fleet:     { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' }
+};
+var sdTrustColors = { live: '#40ff88', sync: '#00e8ff', calc: '#5b8fff', static: '#8899aa', mix: '#b558ff' };
+var sdFreshAt = {};
+
+function sdRenderTrust(key) {
+    var el = document.getElementById('sdTrust-' + key);
+    if (!el) return;
+    var m = sdTrustMeta[key];
+    if (!m) return;
+    var color = sdTrustColors[m.kind] || '#8899aa';
+    var time = sdFreshAt[key]
+        ? new Date(sdFreshAt[key]).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) + ' 更新'
+        : '';
+    el.innerHTML = '<span class="sd-trust-dot" style="background:' + color + ';color:' + color + ';"></span>' +
+        '<span class="sd-trust-kind" style="color:' + color + ';">' + m.label + '</span>' +
+        '<span class="sd-trust-note">' + escapeHtml(m.note) + '</span>' +
+        (time ? '<span class="sd-trust-time">' + time + '</span>' : '');
+}
+
+// 数据成功加载后调用：记录刷新时间并同步徽章
+function sdTouch(key) {
+    sdFreshAt[key] = Date.now();
+    sdRenderTrust(key);
+}
+
 // 主标签页「太空数据中心」被选中时调用：保持上次的子面板
 function showSpaceDataTab() {
     var btn = document.querySelector('.sd-tab.active') || document.querySelector('.sd-tab');
@@ -84,6 +123,7 @@ window.switchSDTab = function(tab, btn) {
     if (panel) panel.classList.add('active');
     var src = document.getElementById('sdSourceBar');
     if (src) src.textContent = '📡 数据来源：' + (sdSources[tab] || 'SpaceHub');
+    sdRenderTrust(tab);
     stopISSTracking();
     stopPassReminder();
     stopSatFleet();
@@ -119,6 +159,7 @@ async function loadISSData() {
         el = document.getElementById('issAlt'); if (el) el.textContent = alt.toFixed(1) + ' km';
         el = document.getElementById('issVel'); if (el) el.textContent = (vel / 3600).toFixed(2) + ' km/s';
         issHasData = true;
+        sdTouch('iss');
         var x = ((lng + 180) / 360) * 100;
         var y = ((90 - lat) / 180) * 100;
         var marker = document.getElementById('issMarker');
@@ -282,6 +323,7 @@ function renderAsteroids(panel, neos, totalCount, prefixHtml) {
     if (neos.length === 0) {
         html += '<div style="text-align:center;padding:30px;color:#667788;">今日没有近地小行星接近数据</div>';
     }
+    sdTouch('asteroids');
     panel.innerHTML = html;
 }
 
@@ -337,6 +379,7 @@ function renderLaunchData(panel, launches) {
         html += '</div>';
     }
     html += '<div style="text-align:center;margin-top:10px;font-size:0.68rem;color:#445566;">数据来源: The Space Devs Launch Library 2</div>';
+    sdTouch('launches');
     panel.innerHTML = html;
 }
 
@@ -470,6 +513,7 @@ async function loadISSCrew() {
         if (cached && (now - cachedTime) < 3600000) {
             try {
                 var cachedData = JSON.parse(cached);
+                sdTouch('crew');
                 renderCrewList(cachedData.iss, cachedData.tiangong);
                 return;
             } catch(e) {}
@@ -502,6 +546,7 @@ async function loadISSCrew() {
         localStorage.setItem(cacheKey, JSON.stringify({ iss: issCrew, tiangong: tiangongCrew }));
         localStorage.setItem(cacheTimeKey, String(now));
 
+        sdTouch('crew');
         renderCrewList(issCrew, tiangongCrew);
     } catch(e) {
         console.error('ISS crew fetch error:', e);
@@ -946,7 +991,7 @@ async function loadTonightCloud(obs) {
     box.innerHTML = '<div class="sd-section-title">🌤️ 今夜观星条件</div><div style="text-align:center;color:#667788;font-size:0.8rem;padding:8px;">正在获取云量预报...</div>';
     try {
         var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + obs.lat.toFixed(3) + '&longitude=' + obs.lng.toFixed(3) +
-            '&hourly=cloud_cover&daily=sunrise,sunset&timezone=auto&forecast_days=2';
+            '&hourly=cloud_cover,precipitation_probability&daily=sunrise,sunset&timezone=auto&forecast_days=2';
         var resp = await fetch(url);
         if (!resp.ok) throw new Error('云量数据获取失败 (' + resp.status + ')');
         var data = await resp.json();
@@ -960,16 +1005,68 @@ async function loadTonightCloud(obs) {
         var list = [];
         for (var i = 0; i < hourly.time.length; i++) {
             var d = new Date(hourly.time[i]);
-            if (d >= sunset && d <= sunrise) list.push({ t: d, cc: hourly.cloud_cover ? hourly.cloud_cover[i] : 0 });
+            if (d >= sunset && d <= sunrise) {
+                list.push({
+                    t: d,
+                    cc: hourly.cloud_cover ? (hourly.cloud_cover[i] || 0) : 0,
+                    pp: hourly.precipitation_probability ? (hourly.precipitation_probability[i] || 0) : 0
+                });
+            }
         }
         if (!list.length) throw new Error('今夜时段无预报');
-        var sum = 0;
-        list.forEach(function(x) { sum += (typeof x.cc === 'number' ? x.cc : 0); });
+        var sum = 0, sumPp = 0;
+        list.forEach(function(x) {
+            sum += typeof x.cc === 'number' ? x.cc : 0;
+            sumPp += typeof x.pp === 'number' ? x.pp : 0;
+        });
         var avg = Math.round(sum / list.length);
+        var avgPp = Math.round(sumPp / list.length);
         var disp = list.filter(function(x) { return x.t.getHours() % 3 === 0; });
         if (disp.length < 3) disp = list;
         var v = avg < 20 ? ['极佳', '🌟', '#40ff88'] : avg < 40 ? ['良好', '✅', '#a3e635'] : avg < 65 ? ['一般', '⚠️', '#fbbf24'] : ['较差', '❌', '#f87171'];
+
+        // ---- 今夜观测综合评分：云量 60% + 降水 15% + 月光干扰 25% ----
+        var moonNow = sdMoonInfo(new Date());
+        var cloudScore = Math.max(0, 100 - avg);
+        var rainScore = Math.max(0, 100 - avgPp);
+        var moonScore = Math.max(0, 100 - Math.round(moonNow.illum * 0.85));
+        var score = Math.round(cloudScore * 0.6 + rainScore * 0.15 + moonScore * 0.25);
+        var scoreInfo = score >= 85 ? ['极佳', '🌟', '#40ff88']
+            : score >= 70 ? ['良好', '✅', '#a3e635']
+            : score >= 50 ? ['一般', '⚠️', '#fbbf24']
+            : score >= 30 ? ['较差', '❌', '#fb923c']
+            : ['不适合', '🚫', '#f87171'];
+
+        // 最佳时段：连续 2 小时以上、云量 < 40% 且降水概率 < 30%
+        var best = null, run = [];
+        list.forEach(function(x) {
+            if (x.cc < 40 && x.pp < 30) {
+                run.push(x);
+            } else {
+                if (!best || run.length > best.length) best = run.slice();
+                run = [];
+            }
+        });
+        if (!best || run.length > best.length) best = run.slice();
+
         var h = '<div class="sd-section-title">🌤️ 今夜观星条件</div>';
+        h += '<div class="sd-score-card">' +
+            '<div class="sd-score-num" style="color:' + scoreInfo[2] + ';">' + score + '</div>' +
+            '<div><div class="sd-score-label">' + scoreInfo[1] + ' ' + scoreInfo[0] + '</div>' +
+            '<div class="sd-score-sub">今夜观测综合评分（满分 100）</div></div>' +
+            '<div class="sd-score-factors">' +
+            '<div class="sd-factor-row"><span>云量</span><div class="sd-factor-bar"><i style="width:' + cloudScore + '%;background:#40ff88;"></i></div><span class="sd-factor-val">' + avg + '%</span></div>' +
+            '<div class="sd-factor-row"><span>降水</span><div class="sd-factor-bar"><i style="width:' + rainScore + '%;background:#22d3ee;"></i></div><span class="sd-factor-val">' + avgPp + '%</span></div>' +
+            '<div class="sd-factor-row"><span>月光</span><div class="sd-factor-bar"><i style="width:' + moonScore + '%;background:#b558ff;"></i></div><span class="sd-factor-val">' + moonNow.illum + '%</span></div>' +
+            '</div></div>';
+        if (best && best.length >= 2) {
+            var bStart = best[0].t.getHours();
+            var bEnd = (best[best.length - 1].t.getHours() + 1) % 24;
+            h += '<div style="font-size:0.72rem;color:#40ff88;margin:0 0 8px;">✨ 最佳观测时段：<strong>' +
+                bStart + ':00 - ' + bEnd + ':00</strong>（云量最低、无降水干扰）</div>';
+        } else {
+            h += '<div style="font-size:0.72rem;color:#fbbf24;margin:0 0 8px;">⚠️ 今夜没有连续 2 小时的晴空窗口，建议关注短时天气变化</div>';
+        }
         h += '<div class="sd-cloud-verdict"><span style="font-size:1.3rem;">' + v[1] + '</span>' +
             '<span>今夜平均云量 <strong style="color:' + v[2] + ';">' + avg + '%</strong></span>' +
             '<span class="v-tag" style="color:' + v[2] + ';margin-left:auto;">' + v[0] + '</span></div>';
@@ -982,7 +1079,8 @@ async function loadTonightCloud(obs) {
                 '<div class="sd-trend-label">' + x.t.getHours() + '时</div></div>';
         });
         h += '</div>';
-        h += '<div style="font-size:0.68rem;color:#556677;margin-top:4px;">柱高表示晴空比例（越高越晴）· 数据源 Open-Meteo</div>';
+        h += '<div style="font-size:0.68rem;color:#556677;margin-top:4px;">柱高表示晴空比例（越高越晴）· 评分 = 云量 60% + 降水 15% + 月光 25% · 数据源 Open-Meteo</div>';
+        sdTouch('tonight');
         box.innerHTML = h;
     } catch (e) {
         box.innerHTML = '<div class="sd-section-title">🌤️ 今夜观星条件</div><div style="font-size:0.76rem;color:#667788;padding:6px 2px;">云量预报暂不可用（' + escapeHtml(e.message || '') + '）</div>';
@@ -1091,6 +1189,7 @@ async function loadISSPasses() {
         window._sdIssPasses = passes;
         window._sdIssPassesTime = Date.now();
         issPassLoadedOnce = true;
+        sdTouch('isspass');
         renderISSPasses(panel, passes);
     } catch (e) {
         panel.innerHTML = '<div style="text-align:center;padding:40px;color:#ff4060;">⚠️ ' + escapeHtml(e.message || '计算失败') +
@@ -1321,6 +1420,7 @@ function renderAurora(panel, obsJson, fcJson) {
     }
 
     html += '<div class="sd-note">🇨🇳 中国大陆处于中低磁纬，常规情况下看不到极光。当 Kp ≥ 5 时，漠河、新疆阿勒泰等高磁纬地区有机会目视极光。极光实际可见性还取决于当地天气、光污染与极光椭圆区位置。</div>';
+    sdTouch('aurora');
     panel.innerHTML = html;
 }
 
@@ -1389,6 +1489,7 @@ async function loadSatFleet() {
         });
         if (!sats.length) throw new Error('未能解析任何卫星轨道（TLE 服务可能繁忙）');
         window._sdFleet = sats;
+        sdTouch('fleet');
         renderSatFleet(panel, sats);
         fleetTimer = setInterval(updateFleetPositions, 5000);
     } catch (e) {

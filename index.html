@@ -4065,6 +4065,23 @@ hr, .divider {
             text-align: center;
             background: rgba(91, 143, 255, 0.04);
         }
+        .sd-trust {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+            padding: 6px 10px; margin-bottom: 10px; border-radius: 8px;
+            font-size: 0.68rem; color: #667788;
+            background: rgba(91, 143, 255, 0.04);
+            border: 1px solid rgba(91, 143, 255, 0.1);
+        }
+        .sd-trust-dot {
+            width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .sd-trust-kind {
+            font-weight: 700; padding: 1px 7px; border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .sd-trust-note { color: #667788; min-width: 0; }
+        .sd-trust-time { margin-left: auto; color: #556677; white-space: nowrap; }
 
         /* --- Tonight's Sky / ISS Pass / Aurora panels --- */
         .tonight-panel, .ispass-panel, .aurora-panel, .fleet-panel { padding: 4px 2px; }
@@ -4160,6 +4177,23 @@ hr, .divider {
             font-size: 0.82rem; color: #ccdde8; margin-bottom: 8px;
         }
         .sd-cloud-verdict .v-tag { font-weight: 700; }
+        .sd-score-card {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
+            padding: 14px; margin-bottom: 10px; border-radius: 12px;
+            background: linear-gradient(135deg, rgba(91,143,255,0.12), rgba(181,88,255,0.06));
+            border: 1px solid rgba(91, 143, 255, 0.18);
+        }
+        .sd-score-num {
+            font-size: 2.6rem; font-weight: 900; line-height: 1;
+            font-variant-numeric: tabular-nums; min-width: 68px;
+        }
+        .sd-score-label { font-size: 0.95rem; font-weight: 700; color: #ccdde8; }
+        .sd-score-sub { font-size: 0.68rem; color: #667788; margin-top: 3px; }
+        .sd-score-factors { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+        .sd-factor-row { display: flex; align-items: center; gap: 6px; font-size: 0.66rem; color: #8899aa; }
+        .sd-factor-bar { flex: 1; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .sd-factor-bar i { display: block; height: 100%; border-radius: 3px; }
+        .sd-factor-val { width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
         .fleet-map {
             position: relative; width: 100%; aspect-ratio: 2/1; margin-bottom: 10px;
             background: #050810; border: 1px solid rgba(91, 143, 255, 0.15); border-radius: 8px; overflow: hidden;
@@ -5026,6 +5060,7 @@ if (typeof supabase === 'undefined') {
             </div>
             <div class="space-data-body space-data-body-inline">
                 <div class="sd-panel active" id="sdPanel-iss">
+                    <div class="sd-trust" id="sdTrust-iss"></div>
                     <div class="iss-map">
                         <div class="iss-track" id="issTrack"></div>
                         <div class="iss-marker" id="issMarker" style="left:50%;top:50%;">
@@ -5042,28 +5077,35 @@ if (typeof supabase === 'undefined') {
                 </div>
 
                 <div class="sd-panel" id="sdPanel-moon">
+                    <div class="sd-trust" id="sdTrust-moon"></div>
                     <div class="moon-panel" id="moonPanel">点击加载月相...</div>
                 </div>
 
                 <div class="sd-panel" id="sdPanel-asteroids">
+                    <div class="sd-trust" id="sdTrust-asteroids"></div>
                     <div class="asteroid-panel" id="asteroidPanel">点击加载近地小行星数据...</div>
                 </div>
 
                 <div class="sd-panel" id="sdPanel-crew">
+                    <div class="sd-trust" id="sdTrust-crew"></div>
                     <div class="crew-panel" id="crewPanel">点击加载ISS乘组信息...</div>
                 </div>
 
                 <div class="sd-panel" id="sdPanel-meteors">
+                    <div class="sd-trust" id="sdTrust-meteors"></div>
                     <div class="meteor-panel" id="meteorPanel">点击查看流星雨日历...</div>
                 </div>
 
                 <div class="sd-panel" id="sdPanel-eclipses">
+                    <div class="sd-trust" id="sdTrust-eclipses"></div>
                     <div class="eclipse-panel" id="eclipsePanel">点击查看日食月食预报...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-launches">
+                    <div class="sd-trust" id="sdTrust-launches"></div>
                     <div class="sd-content" id="launchPanel">🚀 发射任务加载中...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-nasaeys">
+                    <div class="sd-trust" id="sdTrust-nasaeys"></div>
                     <div class="nasa-eyes-panel">
                         <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
                         <div class="nasa-eyes-tip">数据来源：NASA Eyes</div>
@@ -5071,19 +5113,23 @@ if (typeof supabase === 'undefined') {
                     </div>
                 </div>
                 <div class="sd-panel" id="sdPanel-tonight">
+                    <div class="sd-trust" id="sdTrust-tonight"></div>
                     <div class="tonight-panel" id="tonightPanel">点击加载今夜星空...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-isspass">
+                    <div class="sd-trust" id="sdTrust-isspass"></div>
                     <div class="ispass-panel" id="issPassPanel">点击加载ISS过境预报...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-aurora">
+                    <div class="sd-trust" id="sdTrust-aurora"></div>
                     <div class="aurora-panel" id="auroraPanel">点击加载空间天气...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-fleet">
+                    <div class="sd-trust" id="sdTrust-fleet"></div>
                     <div class="fleet-panel" id="fleetPanel">点击加载卫星编队追踪...</div>
                 </div>
             </div>
-            <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：whertheiss.at 实时卫星定位 API</div>
+            <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：wheretheiss.at 实时卫星定位 API</div>
         </div>
     </div>
     <!-- 发帖弹窗 -->
