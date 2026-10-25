@@ -2899,38 +2899,72 @@ hr, .divider {
 }
 .official-embed-head h3 { margin: 0; font-size: 1.05rem; color: #ccdde8; letter-spacing: 0.5px; }
 .official-embed-head p { margin: 4px 0 0; font-size: 0.74rem; color: #667788; }
-.official-embed-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: 9px; font-size: 0.78rem;
-    color: #8fc2ff; text-decoration: none;
-    background: rgba(91, 143, 255, 0.12);
-    border: 1px solid rgba(91, 143, 255, 0.3);
-    transition: background 0.25s, box-shadow 0.25s, color 0.25s;
-}
-.official-embed-link:hover {
-    background: rgba(91, 143, 255, 0.22);
-    box-shadow: 0 0 16px rgba(91, 143, 255, 0.25);
-    color: #ccdde8;
-}
+.official-embed-list { display: flex; flex-direction: column; gap: 16px; }
 .official-embed-card {
     border: 1px solid rgba(91, 143, 255, 0.16);
     border-radius: 14px; overflow: hidden;
     background: rgba(10, 14, 26, 0.6);
 }
 .official-embed-bar {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
     padding: 9px 12px; font-size: 0.72rem;
     border-bottom: 1px solid rgba(91, 143, 255, 0.12);
     background: rgba(91, 143, 255, 0.05);
 }
 .oe-dot { width: 8px; height: 8px; border-radius: 50%; background: #40ff88; box-shadow: 0 0 8px #40ff88; flex-shrink: 0; }
-.oe-name { color: #8fa3b8; }
+.oe-name { color: #8fa3b8; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .oe-tag { padding: 1px 6px; border-radius: 4px; background: rgba(64, 255, 136, 0.12); color: #40ff88; font-weight: 700; }
 .official-embed-bar a { margin-left: auto; color: #5b8fff; text-decoration: none; white-space: nowrap; }
 .official-embed-bar a:hover { text-decoration: underline; }
 .official-embed-note {
     padding: 9px 12px; font-size: 0.68rem; color: #556677;
     border-top: 1px solid rgba(91, 143, 255, 0.1);
+}
+.official-embed-note code {
+    background: rgba(255, 255, 255, 0.06); padding: 1px 4px; border-radius: 3px;
+    font-size: 0.66rem; color: #8fa3b8;
+}
+.oe-dot-amber { background: #ffb347; box-shadow: 0 0 8px #ffb347; }
+.oe-tag-amber { background: rgba(255, 179, 71, 0.12); color: #ffb347; }
+
+/* --- Landsat 名字面板 --- */
+.landsat-panel {
+    display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 22px; padding: 20px; align-items: center;
+    background:
+        radial-gradient(circle at 12% 18%, rgba(47, 157, 106, 0.18), transparent 55%),
+        radial-gradient(circle at 88% 82%, rgba(64, 120, 220, 0.16), transparent 55%);
+}
+.landsat-visual { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.landsat-visual span {
+    aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 1.45rem; font-weight: 800; color: rgba(255, 255, 255, 0.94);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+.landsat-visual span:nth-child(1) { background: linear-gradient(140deg, #1d5f45, #2f9d6a 48%, #8fbf6a); }
+.landsat-visual span:nth-child(2) { background: linear-gradient(140deg, #6b4a2a, #a8763f 52%, #d8b26a); }
+.landsat-visual span:nth-child(3) { background: linear-gradient(140deg, #1b3b6f, #2f6ba8 50%, #6fa8c8); }
+.landsat-visual span:nth-child(4) { background: linear-gradient(140deg, #4a2f6b, #7a56a8 50%, #b98fd0); }
+.landsat-visual span:nth-child(5) { background: linear-gradient(140deg, #8a5a2b, #c08a48 50%, #e0c080); }
+.landsat-visual span:nth-child(6) { background: linear-gradient(140deg, #14523f, #237a5c 50%, #4fa886); }
+.landsat-visual span:nth-child(7) { background: linear-gradient(140deg, #2b3f6b, #4666a8 50%, #7d9ad0); }
+.landsat-visual span:nth-child(8) { background: linear-gradient(140deg, #6b2f4a, #a8567a 50%, #d08fb0); }
+.landsat-copy h4 { margin: 0 0 8px; font-size: 1.02rem; color: #ccdde8; letter-spacing: 0.4px; }
+.landsat-copy p { margin: 0 0 14px; font-size: 0.78rem; line-height: 1.75; color: #71828f; }
+.landsat-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: 9px;
+    font-size: 0.8rem; font-weight: 700; text-decoration: none;
+    color: #1a1206; background: linear-gradient(135deg, #ffd24a, #ffb347);
+    box-shadow: 0 4px 16px rgba(255, 179, 71, 0.24);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.landsat-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 179, 71, 0.36); }
+@media (max-width: 640px) {
+    .landsat-panel { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
+    .landsat-visual { max-width: 260px; }
 }
 
 
@@ -5172,24 +5206,43 @@ if (typeof supabase === 'undefined') {
             <div class="official-embed-head">
                 <div>
                     <h3>🌐 官方嵌入</h3>
-                    <p>直接嵌入官方交互页面，内容与来源站点保持同步</p>
+                    <p>NASA 官方内容面板，可站内预览的一律内嵌，不支持嵌入的提供原站入口</p>
                 </div>
-                <a class="official-embed-link" href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">
-                    在 NASA Eyes 中打开<span>↗</span>
-                </a>
             </div>
-            <div class="official-embed-card">
-                <div class="official-embed-bar">
-                    <span class="oe-dot"></span>
-                    <span class="oe-name">NASA Eyes on the Solar System</span>
-                    <span class="oe-tag">官方</span>
-                    <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">eyes.nasa.gov ↗</a>
-                </div>
-                <div class="nasa-eyes-panel">
-                    <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
-                    <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
-                </div>
-                <div class="official-embed-note">若嵌入页面无法加载（部分网络环境会拦截第三方 iframe），请点击上方「在 NASA Eyes 中打开」在新标签页访问。</div>
+            <div class="official-embed-list">
+                <section class="official-embed-card">
+                    <div class="official-embed-bar">
+                        <span class="oe-dot"></span>
+                        <span class="oe-name">NASA Eyes on the Solar System</span>
+                        <span class="oe-tag">3D 太阳系</span>
+                        <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">eyes.nasa.gov ↗</a>
+                    </div>
+                    <div class="nasa-eyes-panel">
+                        <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
+                        <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
+                    </div>
+                    <div class="official-embed-note">实时可交互的太阳系模型。若嵌入页面无法加载（部分网络环境会拦截第三方 iframe），请点击右上角链接在新标签页访问。</div>
+                </section>
+                <section class="official-embed-card">
+                    <div class="official-embed-bar">
+                        <span class="oe-dot oe-dot-amber"></span>
+                        <span class="oe-name">Your Name in Landsat</span>
+                        <span class="oe-tag oe-tag-amber">你的名字在地球上</span>
+                        <a href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="noopener noreferrer">science.nasa.gov ↗</a>
+                    </div>
+                    <div class="landsat-panel">
+                        <div class="landsat-visual" aria-hidden="true">
+                            <span>Y</span><span>O</span><span>U</span><span>R</span>
+                            <span>N</span><span>A</span><span>M</span><span>E</span>
+                        </div>
+                        <div class="landsat-copy">
+                            <h4>用地球影像拼出你的名字</h4>
+                            <p>输入任意英文名，NASA 会用 Landsat 卫星拍摄的地表影像，为每个字母找一块对应的地球纹理，拼成属于你的名字海报。</p>
+                            <a class="landsat-cta" href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="noopener noreferrer">去输入名字 ↗</a>
+                        </div>
+                    </div>
+                    <div class="official-embed-note">该页面由 NASA Science 托管，并设置了 <code>frame-ancestors 'self'</code>，禁止第三方站点内嵌，因此这里提供官方入口跳转。</div>
+                </section>
             </div>
         </div>
     </div>
