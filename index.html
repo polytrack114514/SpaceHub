@@ -2391,7 +2391,7 @@ body::before {
 
 /* --- 帖子卡片全息效果 --- */
 .post-card {
-    background: var(--surface) !important;
+    background: var(--surface);
     border: 1px solid var(--border) !important;
     border-radius: 16px !important;
     backdrop-filter: blur(12px) !important;
@@ -2413,7 +2413,7 @@ body::before {
     transition: opacity 0.35s;
 }
 .post-card:hover {
-    background: var(--surface-hover) !important;
+    background: var(--surface-hover);
     border-color: rgba(91, 143, 255, 0.35) !important;
     box-shadow:
         0 0 0 1px rgba(91, 143, 255, 0.15),
@@ -2546,12 +2546,12 @@ body::before {
 /* --- 头像发光环 --- */
 .avatar {
     border: 1px solid rgba(91, 143, 255, 0.2) !important;
-    box-shadow: 0 0 8px rgba(91, 143, 255, 0.1) !important;
+    box-shadow: 0 0 8px rgba(91, 143, 255, 0.1);
     transition: transform 0.3s, opacity 0.3s, background-color 0.3s, border-color 0.3s, box-shadow 0.3s, color 0.3s !important;
 }
 .avatar:hover {
     border-color: rgba(91, 143, 255, 0.5) !important;
-    box-shadow: 0 0 16px rgba(91, 143, 255, 0.3) !important;
+    box-shadow: 0 0 16px rgba(91, 143, 255, 0.3);
 }
 
 /* --- 作者名发光 --- */
@@ -4439,14 +4439,14 @@ hr, .divider {
 
         /* --- 帖子卡片 --- */
         .post-card {
-            background: var(--lg-sheen), var(--lg-iris), var(--lg-tint) !important;
+            background: var(--lg-sheen), var(--lg-iris), var(--lg-tint);
             border: 1px solid var(--lg-edge) !important;
             backdrop-filter: var(--lg-blur) !important;
             -webkit-backdrop-filter: var(--lg-blur) !important;
             box-shadow: var(--lg-inset), var(--lg-glow) !important;
         }
         .post-card:hover {
-            background: var(--lg-sheen), var(--lg-iris), var(--lg-tint-hover) !important;
+            background: var(--lg-sheen), var(--lg-iris), var(--lg-tint-hover);
             border-color: var(--lg-edge-hover) !important;
             box-shadow: var(--lg-inset),
                         0 0 0 1px rgba(255, 255, 255, 0.34),

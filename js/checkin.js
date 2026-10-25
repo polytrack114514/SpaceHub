@@ -43,18 +43,37 @@ async function refreshMyStatus() {
     try {
         var res = await sb.rpc('checkin_status', { p_token: token });
         if (res.error) throw res.error;
-        __myStatus = res.data;
-        if (__myStatus && __myStatus.ok) {
-            // 同步到本地缓存，保证头像框/帖子背景立即生效
-            __userRewards[currentUser.name] = {
-                equipped: __myStatus.equipped || {},
-                streak: __myStatus.streak || 0
-            };
+        var d = res.data || {};
+        if (!d.ok) {
+            // token 过期/无效：清掉本地残留登录态，避免「显示已登录、签到却一直失败」
+            if (isTokenError(d)) handleSessionExpired();
+            __myStatus = null;
+            return;
         }
+        __myStatus = d;
+        __sessionExpireNotified = false;
+        // 同步到本地缓存，保证头像框/帖子背景立即生效
+        __userRewards[currentUser.name] = {
+            equipped: __myStatus.equipped || {},
+            streak: __myStatus.streak || 0
+        };
     } catch (e) {
         console.error('[签到] 查询签到状态失败:', e);
         __myStatus = null;
     }
+}
+
+function isTokenError(d) {
+    return !!(d && d.error && String(d.error).indexOf('token') >= 0);
+}
+
+var __sessionExpireNotified = false;
+function handleSessionExpired() {
+    if (__sessionExpireNotified || !getSessionToken()) return;
+    __sessionExpireNotified = true;
+    if (window.handleLogout) window.handleLogout();   // 会清理 token / currentUser
+    ckToast('登录已过期，请重新登录');
+    setTimeout(function() { if (window.openAuthModal) window.openAuthModal(); }, 300);
 }
 
 window.loadCheckinData = async function() {
@@ -138,6 +157,11 @@ window.openCheckinModal = async function() {
     var body = document.getElementById('ckBody');
     if (body && !__myStatus) body.innerHTML = '<div class="ck-loading">加载中...</div>';
     await refreshMyStatus();
+    // token 过期时 refreshMyStatus 已清理登录态并弹出登录框，不要再用空状态覆盖界面
+    if (!__myStatus) {
+        if (getSessionToken()) ckToast('签到状态加载失败，请稍后重试');
+        return;
+    }
     renderCheckinModal();
 };
 
@@ -286,6 +310,7 @@ window.doDailyCheckin = async function() {
         if (res.error) throw res.error;
         var d = res.data || {};
         if (!d.ok) {
+            if (isTokenError(d)) { handleSessionExpired(); closeCheckinModal(); return; }
             await refreshMyStatus();
             renderCheckinModal();
             refreshCheckinHeader();
@@ -313,7 +338,11 @@ window.buyReward = async function(itemId) {
         var res = await sb.rpc('checkin_buy', { p_token: token, p_item: itemId });
         if (res.error) throw res.error;
         var d = res.data || {};
-        if (!d.ok) { ckToast(d.error || '兑换失败'); return; }
+        if (!d.ok) {
+            if (isTokenError(d)) { handleSessionExpired(); closeCheckinModal(); return; }
+            ckToast(d.error || '兑换失败');
+            return;
+        }
         ckToast('兑换成功！已拥有「' + item.name + '」');
         await refreshMyStatus();
         renderCheckinModal();
@@ -330,7 +359,11 @@ window.equipReward = async function(type, itemId) {
         var res = await sb.rpc('checkin_equip', { p_token: token, p_type: type, p_item: itemId });
         if (res.error) throw res.error;
         var d = res.data || {};
-        if (!d.ok) { ckToast(d.error || '操作失败'); return; }
+        if (!d.ok) {
+            if (isTokenError(d)) { handleSessionExpired(); closeCheckinModal(); return; }
+            ckToast(d.error || '操作失败');
+            return;
+        }
         ckToast(itemId ? '已佩戴' : '已卸下');
         await refreshMyStatus();
         renderCheckinModal();
