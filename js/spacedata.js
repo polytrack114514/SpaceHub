@@ -52,7 +52,6 @@ var sdSources = {
     meteors:   '国际流星组织 (IMO) 数据整理',
     eclipses:  'NASA Eclipse Predictions',
     launches:  'The Space Devs Launch Library 2',
-    nasaeys:   'NASA Eyes on the Solar System',
     tonight:   '本地天文算法（行星视位置 · 恒星时 · 曙暮光推算） · 云量 Open-Meteo',
     isspass:   'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me',
     aurora:    'NOAA SWPC 太阳风 · 行星际磁场 · X 射线耀斑 · Kp 指数',
@@ -69,7 +68,6 @@ var sdTrustMeta = {
     meteors:   { kind: 'static', label: '静态数据',  note: 'IMO 年周期流星雨资料' },
     eclipses:  { kind: 'static', label: '静态数据',  note: '已按 NASA 官方目录校对' },
     launches:  { kind: 'live',   label: '实时',      note: 'The Space Devs Launch Library 2' },
-    nasaeys:   { kind: 'live',   label: '官方嵌入',  note: 'NASA Eyes on the Solar System' },
     tonight:   { kind: 'mix',    label: '计算 + 实时', note: '行星位置本地推算；云量来自 Open-Meteo' },
     isspass:   { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' },
     aurora:    { kind: 'live',   label: '实时',      note: 'NOAA SWPC 空间天气数据' },
@@ -138,13 +136,14 @@ window.switchSDTab = function(tab, btn) {
     else if (tab === 'isspass') { loadISSPasses(); }
     else if (tab === 'aurora') { loadAurora(); }
     else if (tab === 'fleet') { loadSatFleet(); }
-    else if (tab === 'nasaeys') {
-        var frame = document.getElementById('nasaEyesFrame');
-        if (frame && frame.src === 'about:blank') {
-            frame.src = 'https://eyes.nasa.gov/apps/solar-system/#/home?embed=true';
-        }
-    }
 }
+// 主标签页「官方嵌入」被选中时调用：懒加载 NASA Eyes 3D 太阳系
+window.showEmbedTab = function() {
+    var frame = document.getElementById('nasaEyesFrame');
+    if (frame && frame.src === 'about:blank') {
+        frame.src = 'https://eyes.nasa.gov/apps/solar-system/#/home?embed=true';
+    }
+};
 var issTimer = null;
 var issTrack = [];
 var issHasData = false;

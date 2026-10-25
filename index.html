@@ -2891,6 +2891,48 @@ hr, .divider {
     .nasa-eyes-panel { height: 400px; }
 }
 
+/* ==================== 官方嵌入标签页 ==================== */
+.official-embed-container { margin: 0 0 20px; }
+.official-embed-head {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+    gap: 10px; margin: 8px 0 14px;
+}
+.official-embed-head h3 { margin: 0; font-size: 1.05rem; color: #ccdde8; letter-spacing: 0.5px; }
+.official-embed-head p { margin: 4px 0 0; font-size: 0.74rem; color: #667788; }
+.official-embed-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 9px; font-size: 0.78rem;
+    color: #8fc2ff; text-decoration: none;
+    background: rgba(91, 143, 255, 0.12);
+    border: 1px solid rgba(91, 143, 255, 0.3);
+    transition: background 0.25s, box-shadow 0.25s, color 0.25s;
+}
+.official-embed-link:hover {
+    background: rgba(91, 143, 255, 0.22);
+    box-shadow: 0 0 16px rgba(91, 143, 255, 0.25);
+    color: #ccdde8;
+}
+.official-embed-card {
+    border: 1px solid rgba(91, 143, 255, 0.16);
+    border-radius: 14px; overflow: hidden;
+    background: rgba(10, 14, 26, 0.6);
+}
+.official-embed-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px; font-size: 0.72rem;
+    border-bottom: 1px solid rgba(91, 143, 255, 0.12);
+    background: rgba(91, 143, 255, 0.05);
+}
+.oe-dot { width: 8px; height: 8px; border-radius: 50%; background: #40ff88; box-shadow: 0 0 8px #40ff88; flex-shrink: 0; }
+.oe-name { color: #8fa3b8; }
+.oe-tag { padding: 1px 6px; border-radius: 4px; background: rgba(64, 255, 136, 0.12); color: #40ff88; font-weight: 700; }
+.official-embed-bar a { margin-left: auto; color: #5b8fff; text-decoration: none; white-space: nowrap; }
+.official-embed-bar a:hover { text-decoration: underline; }
+.official-embed-note {
+    padding: 9px 12px; font-size: 0.68rem; color: #556677;
+    border-top: 1px solid rgba(91, 143, 255, 0.1);
+}
+
 
 /* ==================== 发射提醒 ==================== */
 .launch-notify-btn {
@@ -4998,6 +5040,9 @@ if (typeof supabase === 'undefined') {
                 <button class="tab" data-tab="spacedata">
                     <span class="icon">🛰️</span>太空数据中心
                 </button>
+                <button class="tab" data-tab="embeds">
+                    <span class="icon">🌐</span>官方嵌入
+                </button>
             </div>
             <div class="search-box">
                 <span class="search-icon">🔍</span>
@@ -5052,7 +5097,6 @@ if (typeof supabase === 'undefined') {
                 <button class="sd-tab" onclick="switchSDTab('meteors', this)">流星雨</button>
                 <button class="sd-tab" onclick="switchSDTab('eclipses', this)">日食月食</button>
                 <button class="sd-tab" onclick="switchSDTab('launches', this)">🚀 发射任务</button>
-                <button class="sd-tab" onclick="switchSDTab('nasaeys', this)">🌐 3D太阳系</button>
                 <button class="sd-tab" onclick="switchSDTab('tonight', this)">🌃 今夜星空</button>
                 <button class="sd-tab" onclick="switchSDTab('isspass', this)">⏰ ISS过境</button>
                 <button class="sd-tab" onclick="switchSDTab('aurora', this)">☀️ 空间天气</button>
@@ -5104,14 +5148,6 @@ if (typeof supabase === 'undefined') {
                     <div class="sd-trust" id="sdTrust-launches"></div>
                     <div class="sd-content" id="launchPanel">🚀 发射任务加载中...</div>
                 </div>
-                <div class="sd-panel" id="sdPanel-nasaeys">
-                    <div class="sd-trust" id="sdTrust-nasaeys"></div>
-                    <div class="nasa-eyes-panel">
-                        <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
-                        <div class="nasa-eyes-tip">数据来源：NASA Eyes</div>
-                        <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
-                    </div>
-                </div>
                 <div class="sd-panel" id="sdPanel-tonight">
                     <div class="sd-trust" id="sdTrust-tonight"></div>
                     <div class="tonight-panel" id="tonightPanel">点击加载今夜星空...</div>
@@ -5130,6 +5166,31 @@ if (typeof supabase === 'undefined') {
                 </div>
             </div>
             <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：wheretheiss.at 实时卫星定位 API</div>
+        </div>
+        <!-- 官方嵌入 -->
+        <div class="official-embed-container" id="embedTabContainer" style="display:none;">
+            <div class="official-embed-head">
+                <div>
+                    <h3>🌐 官方嵌入</h3>
+                    <p>直接嵌入官方交互页面，内容与来源站点保持同步</p>
+                </div>
+                <a class="official-embed-link" href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">
+                    在 NASA Eyes 中打开<span>↗</span>
+                </a>
+            </div>
+            <div class="official-embed-card">
+                <div class="official-embed-bar">
+                    <span class="oe-dot"></span>
+                    <span class="oe-name">NASA Eyes on the Solar System</span>
+                    <span class="oe-tag">官方</span>
+                    <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">eyes.nasa.gov ↗</a>
+                </div>
+                <div class="nasa-eyes-panel">
+                    <div class="nasa-eyes-loading" id="nasaEyesLoading">🌍 NASA Eyes 加载中...</div>
+                    <iframe id="nasaEyesFrame" src="about:blank" allow="fullscreen" loading="lazy" onload="var l=document.getElementById('nasaEyesLoading');if(l)l.style.display='none';"></iframe>
+                </div>
+                <div class="official-embed-note">若嵌入页面无法加载（部分网络环境会拦截第三方 iframe），请点击上方「在 NASA Eyes 中打开」在新标签页访问。</div>
+            </div>
         </div>
     </div>
     <!-- 发帖弹窗 -->
