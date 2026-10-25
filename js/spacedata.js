@@ -45,10 +45,10 @@ function renderOnlineUsers(users) {
 // ==================== 太空数据中心 ====================
 // 各子面板的数据来源（底部来源栏显示）
 var sdSources = {
-    iss:       'whertheiss.at 实时卫星定位 API',
+    iss:       'wheretheiss.at 实时卫星定位 API',
     moon:      '本地天文算法（朔望月周期推算）',
     asteroids: 'NASA 近地天体 API (api.nasa.gov)',
-    crew:      'open-notify.org 实时在轨人员 API',
+    crew:      'howmanypeopleareinspacerightnow.com · 定时同步',
     meteors:   '国际流星组织 (IMO) 数据整理',
     eclipses:  'NASA Eclipse Predictions',
     launches:  'The Space Devs Launch Library 2',
@@ -109,7 +109,7 @@ var issTimer = null;
 var issTrack = [];
 async function loadISSData() {
     try {
-        var resp = await fetch('https://api.whertheiss.at/v1/satellites/25544');
+        var resp = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
         if (!resp.ok) throw new Error('ISS API error: ' + resp.status);
         var data = await resp.json();
         var lat = data.latitude, lng = data.longitude, alt = data.altitude, vel = data.velocity;
@@ -423,9 +423,38 @@ async function loadISSCrew() {
         { name: 'Anna Kikina', craft: 'ISS (Soyuz MS-29, Roscosmos)', flag: '🇷🇺' }
     ];
 
+    var countryInfo = {
+        'usa': { agency: 'NASA', flag: '🇺🇸' },
+        'russia': { agency: 'Roscosmos', flag: '🇷🇺' },
+        'china': { agency: 'CNSA', flag: '🇨🇳' },
+        'france': { agency: 'ESA', flag: '🇫🇷' },
+        'japan': { agency: 'JAXA', flag: '🇯🇵' },
+        'canada': { agency: 'CSA', flag: '🇨🇦' },
+        'italy': { agency: 'ESA', flag: '🇮🇹' },
+        'germany': { agency: 'ESA', flag: '🇩🇪' },
+        'united kingdom': { agency: 'ESA', flag: '🇬🇧' },
+        'belgium': { agency: 'ESA', flag: '🇧🇪' },
+        'denmark': { agency: 'ESA', flag: '🇩🇰' },
+        'spain': { agency: 'ESA', flag: '🇪🇸' },
+        'netherlands': { agency: 'ESA', flag: '🇳🇱' },
+        'sweden': { agency: 'ESA', flag: '🇸🇪' },
+        'switzerland': { agency: 'ESA', flag: '🇨🇭' },
+        'uae': { agency: 'MBRSC', flag: '🇦🇪' },
+        'united arab emirates': { agency: 'MBRSC', flag: '🇦🇪' }
+    };
+    var roleCn = {
+        'Station Commander': '空间站指令长',
+        'Spacecraft Commander': '飞船指令长',
+        'Commander': '指令长',
+        'Pilot': '驾驶员',
+        'Mission Specialist': '任务专家',
+        'Flight Engineer': '飞行工程师',
+        'Payload Specialist': '载荷专家'
+    };
+
     try {
-        var cacheKey = 'iss_crew_cache';
-        var cacheTimeKey = 'iss_crew_cache_time';
+        var cacheKey = 'iss_crew_cache_v2';
+        var cacheTimeKey = 'iss_crew_cache_time_v2';
         var now = Date.now();
         var cachedTime = parseInt(localStorage.getItem(cacheTimeKey) || '0');
         var cached = localStorage.getItem(cacheKey);
@@ -438,24 +467,29 @@ async function loadISSCrew() {
             } catch(e) {}
         }
 
-        var resp = await fetch('https://api.open-notify.org/astros.json');
-        if (!resp.ok) throw new Error('Astros API error: ' + resp.status);
+        // 同源数据文件：由 GitHub Actions 定时同步，避免第三方 API 的 CORS 限制与宕机风险
+        var resp = await fetch('data/iss_crew.json?ts=' + Math.floor(now / 3600000));
+        if (!resp.ok) throw new Error('Crew data error: ' + resp.status);
         var data = await resp.json();
 
         var issCrew = [];
         var tiangongCrew = [];
-        for (var i = 0; i < data.people.length; i++) {
-            var p = data.people[i];
-            var info = astroDb[p.name] || { agency: 'Unknown', flag: '🚀' };
+        var people = data.people || [];
+        for (var i = 0; i < people.length; i++) {
+            var p = people[i];
+            var info = astroDb[p.name] || countryInfo[String(p.country || '').toLowerCase()] || { agency: 'Unknown', flag: '🚀' };
+            var isTiangong = String(p.location || '').indexOf('Tiangong') >= 0;
             var entry = {
                 name: p.name,
-                craft: p.craft,
+                craft: isTiangong ? 'Tiangong' : 'ISS',
                 agency: info.agency,
-                flag: info.flag
+                flag: info.flag,
+                role: roleCn[p.title] || p.title || ''
             };
-            if (p.craft === 'ISS') issCrew.push(entry);
-            else if (p.craft === 'Tiangong') tiangongCrew.push(entry);
+            if (isTiangong) tiangongCrew.push(entry);
+            else issCrew.push(entry);
         }
+        if (!issCrew.length && !tiangongCrew.length) throw new Error('乘组数据为空');
 
         localStorage.setItem(cacheKey, JSON.stringify({ iss: issCrew, tiangong: tiangongCrew }));
         localStorage.setItem(cacheTimeKey, String(now));
@@ -463,7 +497,7 @@ async function loadISSCrew() {
         renderCrewList(issCrew, tiangongCrew);
     } catch(e) {
         console.error('ISS crew fetch error:', e);
-        var cached2 = localStorage.getItem('iss_crew_cache');
+        var cached2 = localStorage.getItem('iss_crew_cache_v2');
         if (cached2) {
             try {
                 var cachedData2 = JSON.parse(cached2);
@@ -472,7 +506,7 @@ async function loadISSCrew() {
                 if (note2) {
                     var warn = document.createElement('div');
                     warn.style.cssText = 'text-align:center;padding:6px;color:#667788;font-size:0.8rem;';
-                    warn.textContent = '⚠️ 实时数据获取失败，显示缓存数据';
+                    warn.textContent = '⚠️ 同步数据读取失败，显示上次缓存';
                     note2.appendChild(warn);
                 }
                 return;
@@ -483,7 +517,7 @@ async function loadISSCrew() {
         if (note) {
             var warn = document.createElement('div');
             warn.style.cssText = 'text-align:center;padding:6px;color:#667788;font-size:0.8rem;';
-            warn.textContent = '⚠️ 实时数据获取失败，显示默认乘组名单';
+            warn.textContent = '⚠️ 乘组数据读取失败，显示最近一次已知名单';
             note.appendChild(warn);
         }
     }
@@ -497,7 +531,7 @@ async function loadISSCrew() {
             html += '<div class="crew-avatar">' + c.flag + '</div>';
             html += '<div class="crew-info">';
             html += '<div class="crew-name">' + escapeHtml(c.name) + '</div>';
-            html += '<div class="crew-craft">ISS (' + escapeHtml(c.agency) + ')</div>';
+            html += '<div class="crew-craft">ISS (' + escapeHtml(c.agency) + ')' + (c.role ? ' · ' + escapeHtml(c.role) : '') + '</div>';
             html += '</div></div>';
         }
         html += '</div>';
@@ -510,12 +544,12 @@ async function loadISSCrew() {
                 html += '<div class="crew-avatar">' + t.flag + '</div>';
                 html += '<div class="crew-info">';
                 html += '<div class="crew-name">' + escapeHtml(t.name) + '</div>';
-                html += '<div class="crew-craft">' + escapeHtml(t.craft) + ' (' + escapeHtml(t.agency) + ')</div>';
+                html += '<div class="crew-craft">天宫空间站 (' + escapeHtml(t.agency) + ')' + (t.role ? ' · ' + escapeHtml(t.role) : '') + '</div>';
                 html += '</div></div>';
             }
             html += '</div>';
         }
-        html += '<div style="text-align:center;margin-top:12px;font-size:0.75rem;color:#667788;">数据来源: open-notify.org 实时在轨人员API · 每小时更新</div>';
+        html += '<div style="text-align:center;margin-top:12px;font-size:0.75rem;color:#667788;">数据来源: howmanypeopleareinspacerightnow.com · 每 6 小时同步</div>';
         panel.innerHTML = html;
     }
 }
@@ -585,21 +619,20 @@ function renderMeteorShowers() {
 
 // ==================== 日食/月食预报 ====================
 var eclipseData = [
-    { date: '2026-02-17', type: 'annular', kind: 'solar', name: '日环食', visibility: '南极洲', magnitude: 0.963, duration: '2分20秒', note: '南极洲可见，南美洲南端可见偏食' },
-    { date: '2026-03-03', type: 'total', kind: 'lunar', name: '月全食', visibility: '亚洲东部、大洋洲、太平洋', magnitude: 1.151, duration: '全食58分', note: '中国可见全过程' },
-    { date: '2026-08-12', type: 'total', kind: 'solar', name: '日全食', visibility: '北欧、格陵兰、冰岛、西班牙', magnitude: 1.039, duration: '2分18秒', note: '欧洲北部可见全食，北半球其他地区可见偏食' },
-    { date: '2026-08-28', type: 'partial', kind: 'lunar', name: '月偏食', visibility: '美洲、欧洲、非洲', magnitude: 0.930, duration: '偏食3h18m', note: '美洲地区可见' },
-    { date: '2027-02-06', type: 'annular', kind: 'solar', name: '日环食', visibility: '南美洲、太平洋、大西洋', magnitude: 0.928, duration: '7分51秒', note: '智利、阿根廷可见环食' },
-    { date: '2027-02-20', type: 'penumbral', kind: 'lunar', name: '半影月食', visibility: '美洲、欧洲、非洲', magnitude: 0.929, duration: '约4小时', note: '半影月食，亮度变化不明显' },
-    { date: '2027-03-29', type: 'partial', kind: 'solar', name: '日偏食', visibility: '北美洲、欧洲、非洲北部', magnitude: 0.938, duration: '-', note: '北大西洋和欧洲可见偏食' },
-    { date: '2027-07-07', type: 'penumbral', kind: 'lunar', name: '半影月食', visibility: '太平洋、澳洲、亚洲东部', magnitude: 0.390, duration: '约3小时', note: '半影月食，不易察觉' },
-    { date: '2027-08-02', type: 'total', kind: 'solar', name: '日全食', visibility: '北非、中东、西班牙', magnitude: 1.079, duration: '6分23秒', note: '本世纪最长日全食之一，埃及、沙特可见' },
-    { date: '2027-08-28', type: 'penumbral', kind: 'lunar', name: '半影月食', visibility: '美洲、欧洲、非洲', magnitude: 0.470, duration: '约3.5小时', note: '半影月食' },
-    { date: '2028-01-26', type: 'annular', kind: 'solar', name: '日环食', visibility: '南美洲、北大西洋、欧洲', magnitude: 0.921, duration: '10分27秒', note: '西班牙、葡萄牙可见环食' },
-    { date: '2028-02-12', type: 'total', kind: 'lunar', name: '月全食', visibility: '太平洋、美洲、亚洲东部', magnitude: 1.099, duration: '全食约80分', note: '中国东部可见' },
-    { date: '2028-07-22', type: 'total', kind: 'solar', name: '日全食', visibility: '澳大利亚、新西兰', magnitude: 1.056, duration: '5分10秒', note: '澳大利亚悉尼可见全食' },
-    { date: '2028-07-31', type: 'partial', kind: 'lunar', name: '月偏食', visibility: '非洲、亚洲、澳洲', magnitude: 0.187, duration: '偏食约2小时', note: '非洲和亚洲可见' },
-    { date: '2028-12-25', type: 'annular', kind: 'solar', name: '日环食', visibility: '南美洲、大西洋', magnitude: 0.950, duration: '2分35秒', note: '南美洲可见' }
+    { date: '2026-02-17', type: 'annular', kind: 'solar', name: '日环食', visibility: '南极洲、阿根廷与智利南部、非洲南部', magnitude: '0.963', duration: '环食 2分20秒', note: '环食带穿过南极洲，南美洲南端与非洲南部可见偏食' },
+    { date: '2026-03-03', type: 'total', kind: 'lunar', name: '月全食', visibility: '亚洲东部、大洋洲、太平洋、美洲', magnitude: '1.151', duration: '全食 58 分钟', note: '中国可见全过程' },
+    { date: '2026-08-12', type: 'total', kind: 'solar', name: '日全食', visibility: '格陵兰、冰岛、西班牙；北美洲、西非、欧洲偏食', magnitude: '1.039', duration: '全食 2分18秒', note: '全食带经过北极、格陵兰、冰岛与西班牙' },
+    { date: '2026-08-28', type: 'partial', kind: 'lunar', name: '月偏食', visibility: '东太平洋、美洲、欧洲、非洲', magnitude: '0.930', duration: '偏食 3小时18分', note: '美洲地区可见' },
+    { date: '2027-02-06', type: 'annular', kind: 'solar', name: '日环食', visibility: '南美洲、南极洲、非洲西部与南部', magnitude: '0.928', duration: '环食 7分51秒', note: '环食带经过智利、阿根廷与南大西洋' },
+    { date: '2027-02-20', type: 'penumbral', kind: 'lunar', name: '半影月食', visibility: '美洲、欧洲、非洲、亚洲', magnitude: '—', duration: '约 4 小时', note: '半影月食，亮度变化很小，肉眼不易察觉' },
+    { date: '2027-07-18', type: 'penumbral', kind: 'lunar', name: '半影月食', visibility: '非洲东部、亚洲、澳大利亚、太平洋', magnitude: '—', duration: '约 4 小时', note: '半影很深，但仍难以用肉眼分辨' },
+    { date: '2027-08-02', type: 'total', kind: 'solar', name: '日全食', visibility: '摩洛哥、西班牙、阿尔及利亚、利比亚、埃及、沙特阿拉伯、也门、索马里', magnitude: '1.079', duration: '全食 6分23秒', note: '本世纪最长日全食之一，全食带横跨北非与中东' },
+    { date: '2027-08-17', type: 'penumbral', kind: 'lunar', name: '半影月食', visibility: '太平洋、美洲', magnitude: '—', duration: '约 3.5 小时', note: '半影月食，亮度变化很轻微' },
+    { date: '2028-01-12', type: 'partial', kind: 'lunar', name: '月偏食', visibility: '美洲、欧洲、非洲', magnitude: '0.066', duration: '偏食 56 分钟', note: '食分很小，仅月面边缘略微变暗' },
+    { date: '2028-01-26', type: 'annular', kind: 'solar', name: '日环食', visibility: '厄瓜多尔、秘鲁、巴西、苏里南、西班牙、葡萄牙', magnitude: '0.921', duration: '环食 10分27秒', note: '环食带跨越南美洲北部、大西洋与伊比利亚半岛' },
+    { date: '2028-07-06', type: 'partial', kind: 'lunar', name: '月偏食', visibility: '欧洲、非洲、亚洲、澳大利亚', magnitude: '0.389', duration: '偏食 2小时21分', note: '非洲、欧洲与亚洲可见' },
+    { date: '2028-07-22', type: 'total', kind: 'solar', name: '日全食', visibility: '澳大利亚、新西兰、东南亚', magnitude: '1.056', duration: '全食 5分10秒', note: '全食带经过澳大利亚与新西兰' },
+    { date: '2028-12-31', type: 'total', kind: 'lunar', name: '月全食', visibility: '欧洲、非洲、亚洲、澳大利亚、太平洋', magnitude: '1.246', duration: '全食 1小时11分', note: '跨年夜月全食，亚洲大部分地区可见' }
 ];
 
 function renderEclipses() {

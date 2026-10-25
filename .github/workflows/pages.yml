@@ -3,6 +3,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,6 +25,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Sync ISS crew data
+        run: |
+          if curl -fsSL --retry 3 --max-time 30 \
+               "https://www.howmanypeopleareinspacerightnow.com/peopleinspace.json" \
+               -o /tmp/crew_raw.json; then
+            python3 - <<'PY'
+          import json
+          raw = json.load(open('/tmp/crew_raw.json'))
+          people = [{
+              'name': p.get('name'),
+              'country': p.get('country'),
+              'title': p.get('title'),
+              'location': p.get('location'),
+              'launchdate': p.get('launchdate'),
+          } for p in raw.get('people', []) if p.get('name')]
+          with open('data/iss_crew.json', 'w', encoding='utf-8') as f:
+              json.dump({'number': len(people), 'people': people}, f,
+                        ensure_ascii=False, indent=2)
+          print('synced crew:', len(people))
+          PY
+          else
+            echo "Crew sync failed, keeping the existing data/iss_crew.json"
+          fi
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
