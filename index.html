@@ -2883,83 +2883,42 @@ hr, .divider {
 }
 .official-embed-head h3 { margin: 0; font-size: 1.05rem; color: #ccdde8; letter-spacing: 0.5px; }
 .official-embed-head p { margin: 4px 0 0; font-size: 0.74rem; color: #667788; }
-.official-embed-list { display: flex; flex-direction: column; gap: 16px; }
-.official-embed-card {
-    border: 1px solid rgba(91, 143, 255, 0.16);
-    border-radius: 14px; overflow: hidden;
-    background: rgba(10, 14, 26, 0.6);
+.official-link-section { margin-bottom: 22px; }
+.official-section-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 9px 14px; margin-bottom: 12px; border-radius: 10px;
+    font-size: 0.86rem; font-weight: 700; color: #8fc2ff; letter-spacing: 0.5px;
+    background: rgba(91, 143, 255, 0.1);
+    border: 1px solid rgba(91, 143, 255, 0.22);
 }
-.official-embed-bar {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-    padding: 9px 12px; font-size: 0.72rem;
-    border-bottom: 1px solid rgba(91, 143, 255, 0.12);
-    background: rgba(91, 143, 255, 0.05);
+.official-section-count { font-size: 0.7rem; font-weight: 400; color: #667788; }
+.official-link-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.official-link-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 13px; border-radius: 11px;
+    border: 1px solid rgba(91, 143, 255, 0.14);
+    background: rgba(91, 143, 255, 0.04);
+    text-decoration: none; min-width: 0;
+    transition: background 0.25s, border-color 0.25s, transform 0.25s, box-shadow 0.25s;
 }
-.oe-dot { width: 8px; height: 8px; border-radius: 50%; background: #40ff88; box-shadow: 0 0 8px #40ff88; flex-shrink: 0; }
-.oe-name { color: #8fa3b8; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.oe-tag { padding: 1px 6px; border-radius: 4px; background: rgba(64, 255, 136, 0.12); color: #40ff88; font-weight: 700; }
-.official-embed-bar a { margin-left: auto; color: #5b8fff; text-decoration: none; white-space: nowrap; }
-.official-embed-bar a:hover { text-decoration: underline; }
-.official-embed-note {
-    padding: 9px 12px; font-size: 0.68rem; color: #556677;
-    border-top: 1px solid rgba(91, 143, 255, 0.1);
+.official-link-card:hover {
+    background: rgba(91, 143, 255, 0.1);
+    border-color: rgba(91, 143, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
-.official-embed-note code {
-    background: rgba(255, 255, 255, 0.06); padding: 1px 4px; border-radius: 3px;
-    font-size: 0.66rem; color: #8fa3b8;
+.olc-icon {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(91, 143, 255, 0.14); font-size: 1rem;
 }
-.oe-dot-amber { background: #ffb347; box-shadow: 0 0 8px #ffb347; }
-.oe-tag-amber { background: rgba(255, 179, 71, 0.12); color: #ffb347; }
-
-/* --- 官方入口面板 --- */
-.link-panel {
-    display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: 22px; padding: 20px; align-items: center;
-    background:
-        radial-gradient(circle at 12% 18%, rgba(47, 157, 106, 0.18), transparent 55%),
-        radial-gradient(circle at 88% 82%, rgba(64, 120, 220, 0.16), transparent 55%);
-}
-.letter-visual { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.planet-visual { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.letter-visual span, .planet-visual span {
-    aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16);
-    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-}
-.letter-visual span { font-size: 1.45rem; font-weight: 800; color: rgba(255, 255, 255, 0.94); }
-.planet-visual span { font-size: 1.3rem; }
-.letter-visual span:nth-child(1) { background: linear-gradient(140deg, #1d5f45, #2f9d6a 48%, #8fbf6a); }
-.letter-visual span:nth-child(2) { background: linear-gradient(140deg, #6b4a2a, #a8763f 52%, #d8b26a); }
-.letter-visual span:nth-child(3) { background: linear-gradient(140deg, #1b3b6f, #2f6ba8 50%, #6fa8c8); }
-.letter-visual span:nth-child(4) { background: linear-gradient(140deg, #4a2f6b, #7a56a8 50%, #b98fd0); }
-.letter-visual span:nth-child(5) { background: linear-gradient(140deg, #8a5a2b, #c08a48 50%, #e0c080); }
-.letter-visual span:nth-child(6) { background: linear-gradient(140deg, #14523f, #237a5c 50%, #4fa886); }
-.letter-visual span:nth-child(7) { background: linear-gradient(140deg, #2b3f6b, #4666a8 50%, #7d9ad0); }
-.letter-visual span:nth-child(8) { background: linear-gradient(140deg, #6b2f4a, #a8567a 50%, #d08fb0); }
-.planet-visual span:nth-child(1) { background: linear-gradient(140deg, #5a2a08, #c96a1a 50%, #ffb347); }
-.planet-visual span:nth-child(2) { background: linear-gradient(140deg, #0f2a52, #1f5f9c 50%, #4e9fd0); }
-.planet-visual span:nth-child(3) { background: linear-gradient(140deg, #4a150f, #9c3a26 50%, #d0654e); }
-.planet-visual span:nth-child(4) { background: linear-gradient(140deg, #4d3a1a, #9c7a3a 50%, #d0b070); }
-.planet-visual span:nth-child(5) { background: linear-gradient(140deg, #2b2b2b, #555 50%, #8a8a8a); }
-.planet-visual span:nth-child(6) { background: linear-gradient(140deg, #0d3a4a, #1a6b7a 50%, #4ab0c0); }
-.planet-visual span:nth-child(7) { background: linear-gradient(140deg, #2a1a4d, #5a3a9c 50%, #8a6ad0); }
-.planet-visual span:nth-child(8) { background: linear-gradient(140deg, #1d1530, #3a2a5a 50%, #6a4a8a); }
-.planet-visual span:nth-child(9) { background: linear-gradient(140deg, #1a2a3a, #2f4a6b 50%, #5a7a9c); }
-.link-copy h4 { margin: 0 0 8px; font-size: 1.02rem; color: #ccdde8; letter-spacing: 0.4px; }
-.link-copy p { margin: 0 0 14px; font-size: 0.78rem; line-height: 1.75; color: #71828f; }
-.link-cta {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 9px 16px; border-radius: 9px;
-    font-size: 0.8rem; font-weight: 700; text-decoration: none;
-    color: #1a1206; background: linear-gradient(135deg, #ffd24a, #ffb347);
-    box-shadow: 0 4px 16px rgba(255, 179, 71, 0.24);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.link-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255, 179, 71, 0.36); }
+.olc-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.olc-body strong { font-size: 0.86rem; font-weight: 600; color: #ccdde8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.olc-body small { font-size: 0.7rem; color: #6c7d8f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.olc-arrow { flex-shrink: 0; color: #5b8fff; font-size: 0.9rem; }
 @media (max-width: 640px) {
-    .link-panel { grid-template-columns: 1fr; gap: 16px; padding: 16px; }
-    .letter-visual, .planet-visual { max-width: 260px; }
+    .official-link-grid { grid-template-columns: 1fr; }
+    .official-section-head { font-size: 0.8rem; }
 }
 
 
@@ -5213,52 +5172,92 @@ if (typeof supabase === 'undefined') {
             <div class="official-embed-head">
                 <div>
                     <h3>🌐 官方网页跳转</h3>
-                    <p>NASA 官方互动页面入口，点击按钮在新标签页打开原站</p>
+                    <p>NASA 与各国航天机构官方入口，点击卡片在新标签页打开</p>
                 </div>
             </div>
-            <div class="official-embed-list">
-                <section class="official-embed-card">
-                    <div class="official-embed-bar">
-                        <span class="oe-dot"></span>
-                        <span class="oe-name">NASA Eyes on the Solar System</span>
-                        <span class="oe-tag">3D 太阳系</span>
-                        <a href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">eyes.nasa.gov ↗</a>
-                    </div>
-                    <div class="link-panel">
-                        <div class="planet-visual" aria-hidden="true">
-                            <span>☀️</span><span>🌍</span><span>🔴</span>
-                            <span>🪐</span><span>🌕</span><span>☄️</span>
-                            <span>🚀</span><span>🌌</span><span>🛰️</span>
-                        </div>
-                        <div class="link-copy">
-                            <h4>在浏览器里漫游太阳系</h4>
-                            <p>NASA 官方交互式模拟器，可自由缩放、切换视角，查看行星、卫星与探测器的真实轨道位置。</p>
-                            <a class="link-cta" href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">打开 3D 太阳系 ↗</a>
-                        </div>
-                    </div>
-                    <div class="official-embed-note">该模拟器由 NASA 托管，并限制在独立页面中运行，因此这里提供官方入口跳转。</div>
-                </section>
-                <section class="official-embed-card">
-                    <div class="official-embed-bar">
-                        <span class="oe-dot oe-dot-amber"></span>
-                        <span class="oe-name">Your Name in Landsat</span>
-                        <span class="oe-tag oe-tag-amber">你的名字在地球上</span>
-                        <a href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="noopener noreferrer">science.nasa.gov ↗</a>
-                    </div>
-                    <div class="link-panel">
-                        <div class="letter-visual" aria-hidden="true">
-                            <span>Y</span><span>O</span><span>U</span><span>R</span>
-                            <span>N</span><span>A</span><span>M</span><span>E</span>
-                        </div>
-                        <div class="link-copy">
-                            <h4>用地球影像拼出你的名字</h4>
-                            <p>输入任意英文名，NASA 会用 Landsat 卫星拍摄的地表影像，为每个字母找一块对应的地球纹理，拼成属于你的名字海报。</p>
-                            <a class="link-cta" href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="noopener noreferrer">去输入名字 ↗</a>
-                        </div>
-                    </div>
-                    <div class="official-embed-note">该页面由 NASA Science 托管，并设置了 <code>frame-ancestors 'self'</code>，禁止第三方站点内嵌，因此这里提供官方入口跳转。</div>
-                </section>
-            </div>
+
+            <section class="official-link-section">
+                <div class="official-section-head">
+                    <span>🏛️ 官方机构</span>
+                    <span class="official-section-count">9 个入口</span>
+                </div>
+                <div class="official-link-grid">
+                    <a class="official-link-card" href="https://www.nasa.gov/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🚀</span>
+                        <span class="olc-body"><strong>NASA</strong><small>美国国家航空航天局</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.esa.int/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇪🇺</span>
+                        <span class="olc-body"><strong>ESA</strong><small>欧洲空间局</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.cnsa.gov.cn/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇨🇳</span>
+                        <span class="olc-body"><strong>CNSA</strong><small>中国国家航天局</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.cmse.gov.cn/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🧑‍🚀</span>
+                        <span class="olc-body"><strong>中国载人航天</strong><small>空间站与载人任务官网</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://global.jaxa.jp/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇯🇵</span>
+                        <span class="olc-body"><strong>JAXA</strong><small>日本宇宙航空研究开发机构</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.isro.gov.in/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇮🇳</span>
+                        <span class="olc-body"><strong>ISRO</strong><small>印度空间研究组织</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.spacex.com/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🚀</span>
+                        <span class="olc-body"><strong>SpaceX</strong><small>商业航天与星舰发射</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.rocketlabusa.com/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🛰️</span>
+                        <span class="olc-body"><strong>Rocket Lab</strong><small>小型运载火箭与电子号</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.blueorigin.com/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🛫</span>
+                        <span class="olc-body"><strong>Blue Origin</strong><small>蓝色起源 · 新格伦火箭</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                </div>
+            </section>
+
+            <section class="official-link-section">
+                <div class="official-section-head">
+                    <span>🎮 官方互动页面入口</span>
+                    <span class="official-section-count">4 个入口</span>
+                </div>
+                <div class="official-link-grid">
+                    <a class="official-link-card" href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🪐</span>
+                        <span class="olc-body"><strong>NASA Eyes on the Solar System</strong><small>3D 太阳系实时交互模拟器</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://science.nasa.gov/specials/your-name-in-landsat/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🌍</span>
+                        <span class="olc-body"><strong>Your Name in Landsat</strong><small>用卫星影像拼出你的名字</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://stellarium-web.org/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">✨</span>
+                        <span class="olc-body"><strong>Stellarium Web</strong><small>在线星图，实时显示当前星空</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://eyes.nasa.gov/dsn/dsn.html" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">📡</span>
+                        <span class="olc-body"><strong>DSN Now</strong><small>深空网络实时通信状态</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                </div>
+            </section>
         </div>
     </div>
     <!-- 发帖弹窗 -->
