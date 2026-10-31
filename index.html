@@ -4319,6 +4319,13 @@ hr, .divider {
             text-align: center; padding: 8px;
             background: rgba(91, 143, 255, 0.05); border-radius: 8px;
         }
+        .sentry-note {
+            margin: 0 0 12px; padding: 10px 12px;
+            font-size: 0.72rem; line-height: 1.8; color: #7788a0;
+            background: rgba(91, 143, 255, 0.06);
+            border-left: 3px solid rgba(91, 143, 255, 0.4);
+            border-radius: 0 6px 6px 0;
+        }
         .asteroid-card {
             background: rgba(91, 143, 255, 0.04);
             border: 1px solid rgba(91, 143, 255, 0.1);
@@ -5130,6 +5137,7 @@ if (typeof supabase === 'undefined') {
                 <button class="sd-tab" onclick="switchSDTab('isspass', this)">⏰ ISS过境</button>
                 <button class="sd-tab" onclick="switchSDTab('aurora', this)">☀️ 空间天气</button>
                 <button class="sd-tab" onclick="switchSDTab('fleet', this)">🛰️ 卫星编队</button>
+                <button class="sd-tab" onclick="switchSDTab('sentry', this)">💥 撞击风险</button>
             </div>
             <div class="space-data-body space-data-body-inline">
                 <div class="sd-panel active" id="sdPanel-iss">
@@ -5192,6 +5200,10 @@ if (typeof supabase === 'undefined') {
                 <div class="sd-panel" id="sdPanel-fleet">
                     <div class="sd-trust" id="sdTrust-fleet"></div>
                     <div class="fleet-panel" id="fleetPanel">点击加载卫星编队追踪...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-sentry">
+                    <div class="sd-trust" id="sdTrust-sentry"></div>
+                    <div class="sentry-panel" id="sentryPanel">点击加载撞击风险榜...</div>
                 </div>
             </div>
             <div class="sd-source-bar" id="sdSourceBar">📡 数据来源：wheretheiss.at 实时卫星定位 API</div>

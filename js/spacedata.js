@@ -55,7 +55,8 @@ var sdSources = {
     tonight:   '本地天文算法（行星视位置 · 恒星时 · 曙暮光推算） · 云量 Open-Meteo',
     isspass:   'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me',
     aurora:    'NOAA SWPC 太阳风 · 行星际磁场 · X 射线耀斑 · Kp 指数',
-    fleet:     'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me'
+    fleet:     'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me',
+    sentry:    'NASA/JPL Sentry 撞击风险数据 · 每 6 小时同步'
 };
 var sdCurrentTab = 'iss';
 
@@ -71,7 +72,8 @@ var sdTrustMeta = {
     tonight:   { kind: 'mix',    label: '计算 + 实时', note: '行星位置本地推算；云量来自 Open-Meteo' },
     isspass:   { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' },
     aurora:    { kind: 'live',   label: '实时',      note: 'NOAA SWPC 空间天气数据' },
-    fleet:     { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' }
+    fleet:     { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' },
+    sentry:    { kind: 'sync',   label: '定时同步',  note: 'NASA/JPL Sentry，每 6 小时同步' }
 };
 var sdTrustColors = { live: '#40ff88', sync: '#00e8ff', calc: '#5b8fff', static: '#8899aa', mix: '#b558ff' };
 var sdFreshAt = {};
@@ -136,6 +138,7 @@ window.switchSDTab = function(tab, btn) {
     else if (tab === 'isspass') { loadISSPasses(); }
     else if (tab === 'aurora') { loadAurora(); }
     else if (tab === 'fleet') { loadSatFleet(); }
+    else if (tab === 'sentry') { loadSentry(); }
 }
 var issTimer = null;
 var issTrack = [];
@@ -316,6 +319,73 @@ function renderAsteroids(panel, neos, totalCount, prefixHtml) {
         html += '<div style="text-align:center;padding:30px;color:#667788;">今日没有近地小行星接近数据</div>';
     }
     sdTouch('asteroids');
+    panel.innerHTML = html;
+}
+
+// ==================== 💥 撞击风险榜 (JPL Sentry) ====================
+var SENTRY_CACHE_KEY = 'spacehub_sentry_v2';
+
+function sentryProbText(p) {
+    if (p == null || !isFinite(p)) return '未知';
+    if (p >= 0.001) return (p * 100).toFixed(3) + '%';
+    return p.toExponential(2);
+}
+
+function sentryYearText(range) {
+    if (!range) return '未知';
+    var parts = String(range).split('-');
+    if (parts.length === 2 && parts[0] !== parts[1]) return parts[0] + '–' + parts[1] + ' 年';
+    return (parts[0] || '未知') + ' 年';
+}
+
+async function loadSentry() {
+    var panel = document.getElementById('sentryPanel');
+    if (!panel) return;
+    var cached = null;
+    try { cached = JSON.parse(localStorage.getItem(SENTRY_CACHE_KEY) || 'null'); } catch (e) { cached = null; }
+    if (cached && cached.objects && cached.objects.length) renderSentry(panel, cached);
+    var fresh = cached && cached.updated && (Date.now() - Date.parse(cached.updated) < 12 * 3600 * 1000);
+    if (fresh) return;
+    try {
+        var res = await fetch('data/sentry.json?t=' + Math.floor(Date.now() / 3600000), { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        var data = await res.json();
+        if (!data.objects || !data.objects.length) throw new Error('空数据');
+        try { localStorage.setItem(SENTRY_CACHE_KEY, JSON.stringify(data)); } catch (e) {}
+        renderSentry(panel, data);
+        sdTouch('sentry');
+    } catch (err) {
+        console.warn('[Sentry] 加载失败:', err);
+        if (!cached || !cached.objects || !cached.objects.length) {
+            panel.innerHTML = '<div style="text-align:center;padding:30px;color:#667788;line-height:1.9;">' +
+                '⚠️ 撞击风险数据加载失败<br>' +
+                '<span style="font-size:0.72rem;">数据由 GitHub Actions 每 6 小时从 NASA/JPL Sentry 同步，请稍后再试</span></div>';
+        }
+    }
+}
+
+function renderSentry(panel, data) {
+    var objs = data.objects || [];
+    var html = '<div class="asteroid-header-info">💥 JPL Sentry 风险榜：<strong style="color:#5b8fff;">' +
+        (data.count || objs.length) + '</strong> 颗被监测天体 | 按 Palermo 风险指数排序</div>';
+    html += '<div class="sentry-note">Palermo 指数衡量撞击风险相对背景水平的高低，0 表示与背景相当，负值越低越安全。这里的概率都极低，只代表「需要继续观测」，不是撞击预警。</div>';
+    for (var i = 0; i < Math.min(objs.length, 12); i++) {
+        var o = objs[i];
+        var risk = o.ps_cum != null && o.ps_cum >= -2;
+        var diam = o.diameter_km != null
+            ? (o.diameter_km < 1 ? Math.round(o.diameter_km * 1000) + ' m' : o.diameter_km.toFixed(2) + ' km')
+            : '未知';
+        html += '<div class="asteroid-card">';
+        html += '<div class="asteroid-name">' + escapeHtml(o.fullname || o.des || '未知') +
+            '<span class="asteroid-danger ' + (risk ? 'hazardous' : 'safe') + '">' +
+            (risk ? '需关注' : '概率极低') + '</span></div>';
+        html += '<div class="asteroid-grid">';
+        html += '<div class="asteroid-stat">直径: <strong>' + diam + '</strong></div>';
+        html += '<div class="asteroid-stat">可能撞击: <strong>' + sentryYearText(o.range) + '</strong></div>';
+        html += '<div class="asteroid-stat">撞击概率: <strong>' + sentryProbText(o.ip) + '</strong></div>';
+        html += '<div class="asteroid-stat">Palermo 指数: <strong>' + (o.ps_cum != null ? o.ps_cum.toFixed(2) : '未知') + '</strong></div>';
+        html += '</div></div>';
+    }
     panel.innerHTML = html;
 }
 

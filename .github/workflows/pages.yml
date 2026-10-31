@@ -48,6 +48,47 @@ jobs:
           else
             echo "Crew sync failed, keeping the existing data/iss_crew.json"
           fi
+      - name: Sync JPL Sentry risk data
+        run: |
+          if curl -fsSL --retry 3 --max-time 60 \
+               "https://ssd-api.jpl.nasa.gov/sentry.api" \
+               -o /tmp/sentry_raw.json; then
+            python3 - <<'PY'
+          import json, datetime
+          raw = json.load(open('/tmp/sentry_raw.json'))
+          items = raw.get('data', [])
+
+          def num(v):
+              try:
+                  return float(v)
+              except (TypeError, ValueError):
+                  return None
+
+          items.sort(key=lambda x: num(x.get('ps_cum')) or -99, reverse=True)
+          objs = [{
+              'des': x.get('des'),
+              'fullname': x.get('fullname'),
+              'diameter_km': num(x.get('diameter')),
+              'range': x.get('range'),
+              'ip': num(x.get('ip')),
+              'ps_cum': num(x.get('ps_cum')),
+              'ps_max': num(x.get('ps_max')),
+              'v_inf': num(x.get('v_inf')),
+              'n_imp': x.get('n_imp'),
+              'last_obs': x.get('last_obs'),
+          } for x in items[:40]]
+          stamp = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+          with open('data/sentry.json', 'w', encoding='utf-8') as f:
+              json.dump({
+                  'updated': stamp.isoformat().replace('+00:00', 'Z'),
+                  'count': int(raw.get('count', len(items))),
+                  'objects': objs,
+              }, f, ensure_ascii=False, indent=2)
+          print('synced sentry:', len(objs), 'of', raw.get('count'))
+          PY
+          else
+            echo "Sentry sync failed, keeping the existing data/sentry.json"
+          fi
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
