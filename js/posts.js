@@ -562,7 +562,7 @@ document.querySelectorAll('.tab').forEach(function(tab) {
             if (aiContainer) aiContainer.style.display = 'none';
             if (launchContainer) launchContainer.style.display = 'none';
             if (sdContainer) sdContainer.style.display = 'none';
-            if (embedContainer) { embedContainer.style.display = 'block'; showEmbedTab(); }
+            if (embedContainer) { embedContainer.style.display = 'block'; }
         } else {
             if (postsList) { postsList.style.display = 'block'; renderPosts(); }
             if (aiContainer) aiContainer.style.display = 'none';

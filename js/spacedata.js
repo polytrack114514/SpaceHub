@@ -137,13 +137,6 @@ window.switchSDTab = function(tab, btn) {
     else if (tab === 'aurora') { loadAurora(); }
     else if (tab === 'fleet') { loadSatFleet(); }
 }
-// 主标签页「官方嵌入」被选中时调用：懒加载 NASA Eyes 3D 太阳系
-window.showEmbedTab = function() {
-    var frame = document.getElementById('nasaEyesFrame');
-    if (frame && frame.src === 'about:blank') {
-        frame.src = 'https://eyes.nasa.gov/apps/solar-system/#/home?embed=true';
-    }
-};
 var issTimer = null;
 var issTrack = [];
 var issHasData = false;
