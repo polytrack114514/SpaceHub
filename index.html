@@ -5011,15 +5011,15 @@ hr, .divider {
         }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"></script>
+<script src="vendor/supabase.js"></script>
 <script>
 if (typeof supabase === 'undefined') {
-    document.write('<' + 'script src="https://cdn.jsdmirror.com/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"><' + '/script>');
+    document.write('<' + 'script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"><' + '/script>');
 }
 </script>
 <script>
 if (typeof supabase === 'undefined') {
-    document.write('<' + 'script src="https://jsd.onmicrosoft.cn/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"><' + '/script>');
+    document.write('<' + 'script src="https://cdn.jsdmirror.com/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js"><' + '/script>');
 }
 </script>
 <script>
@@ -5416,29 +5416,47 @@ window.addEventListener('error', function(e) {
     hideSpaceLoader();
 });
 
-renderAuthArea();
-loadUsers();
-loadPosts().then(function() { hideSpaceLoader(); });
-initNotifyMessageSystem();
+// 初始化容错：任一模块异常都不能阻断帖子加载
+function safeInit(label, fn) {
+    try {
+        fn();
+    } catch (e) {
+        console.error('[SpaceHub] ' + label + ' 初始化失败:', e);
+    }
+}
+
+safeInit('界面', renderAuthArea);
+safeInit('用户列表', loadUsers);
+if (typeof loadPosts === 'function') {
+    loadPosts().then(hideSpaceLoader, function(e) {
+        console.error('[SpaceHub] 帖子加载异常:', e);
+        hideSpaceLoader();
+    });
+} else {
+    var postsEl = document.getElementById('postsList');
+    if (postsEl) postsEl.innerHTML = '<div class="empty-state"><div class="emoji">⚠️</div><p>页面脚本未加载完整，请刷新页面重试</p></div>';
+    hideSpaceLoader();
+}
+safeInit('通知', initNotifyMessageSystem);
 // Safety: hide loader after 5s even if loadPosts hangs
 setTimeout(function() { hideSpaceLoader(); }, 5000);
 
 // ==================== 初始化新功能 ====================
-loadAPOD();
-loadSiteSettings();
+safeInit('天文一图', loadAPOD);
+safeInit('站点设置', loadSiteSettings);
 // Online users heartbeat
 if (currentUser) {
-    updateLastActive();
-    setInterval(updateLastActive, 30000);
+    safeInit('在线心跳', updateLastActive);
+    setInterval(function() { safeInit('在线心跳', updateLastActive); }, 30000);
 }
-loadOnlineUsers();
-setInterval(loadOnlineUsers, 30000);
+safeInit('在线用户', loadOnlineUsers);
+setInterval(function() { safeInit('在线用户', loadOnlineUsers); }, 30000);
 
 // 每日签到 / 装饰物
-loadCheckinData();
+safeInit('签到', loadCheckinData);
 
 // 发射提醒检查
-startLaunchNotifyChecker();
+safeInit('发射提醒', startLaunchNotifyChecker);
 </script>
 
 <!-- ==================== 页面底部 ==================== -->

@@ -38,9 +38,87 @@ var sb;
     }
 })();
 
+/* ---------- SDK 兜底加载 ----------
+   部分浏览器插件 / 网络会拦截第三方 CDN，导致 supabase 未定义。
+   此时按顺序动态加载备用源，避免帖子区永久空白。 */
+var SUPABASE_SDK_FALLBACKS = [
+    'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js',
+    'https://cdn.jsdmirror.com/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js',
+    'https://jsd.onmicrosoft.cn/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.js',
+    'https://unpkg.com/@supabase/supabase-js@2.76.1/dist/umd/supabase.js'
+];
+var supabaseReadyPromise = null;
+
+function loadScriptOnce(url) {
+    return new Promise(function(resolve, reject) {
+        var script = document.createElement('script');
+        var settled = false;
+        var timer = setTimeout(function() {
+            if (settled) return;
+            settled = true;
+            script.onload = script.onerror = null;
+            if (script.parentNode) script.parentNode.removeChild(script);
+            reject(new Error('timeout'));
+        }, 12000);
+        script.src = url;
+        script.async = true;
+        script.onload = function() {
+            if (settled) return;
+            settled = true; clearTimeout(timer); resolve();
+        };
+        script.onerror = function() {
+            if (settled) return;
+            settled = true; clearTimeout(timer);
+            if (script.parentNode) script.parentNode.removeChild(script);
+            reject(new Error('load error'));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+function ensureSupabase() {
+    if (sb) return Promise.resolve(sb);
+    if (supabaseReadyPromise) return supabaseReadyPromise;
+    supabaseReadyPromise = (async function() {
+        if (typeof supabase === 'undefined') {
+            for (var i = 0; i < SUPABASE_SDK_FALLBACKS.length; i++) {
+                try { await loadScriptOnce(SUPABASE_SDK_FALLBACKS[i]); } catch (e) { continue; }
+                if (typeof supabase !== 'undefined') break;
+            }
+        }
+        if (typeof supabase === 'undefined') return null;
+        try {
+            sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('[SpaceHub] Supabase 兜底加载成功');
+        } catch (e) {
+            console.error('[SpaceHub] Supabase 兜底初始化失败:', e.message);
+            sb = null;
+        }
+        return sb;
+    })();
+    return supabaseReadyPromise;
+}
+window.ensureSupabase = ensureSupabase;
+
+/* ---------- 本地存储容错（禁用站点数据的浏览器会抛异常） ---------- */
+function storageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+}
+function storageSet(key, value) {
+    try { window.localStorage.setItem(key, value); return true; } catch (e) { return false; }
+}
+function storageRemove(key) {
+    try { window.localStorage.removeItem(key); } catch (e) {}
+}
+function readStoredJSON(key, fallback) {
+    var raw = storageGet(key);
+    if (!raw) return fallback;
+    try { return JSON.parse(raw); } catch (e) { return fallback; }
+}
+
 /* ---------- 全局状态 ---------- */
-let currentUser = JSON.parse(localStorage.getItem(USER_KEY)) || null;
-let likedPosts  = JSON.parse(localStorage.getItem(LIKED_POSTS_KEY)) || {};
+let currentUser = readStoredJSON(USER_KEY, null);
+let likedPosts  = readStoredJSON(LIKED_POSTS_KEY, {});
 
 /* ---------- Token 管理 ---------- */
 function generateSessionToken() {
@@ -50,15 +128,15 @@ function generateSessionToken() {
 }
 
 function getSessionToken() {
-    return localStorage.getItem(SESSION_TOKEN_KEY) || null;
+    return storageGet(SESSION_TOKEN_KEY) || null;
 }
 
 function setSessionToken(token) {
-    localStorage.setItem(SESSION_TOKEN_KEY, token);
+    storageSet(SESSION_TOKEN_KEY, token);
 }
 
 function clearSessionToken() {
-    localStorage.removeItem(SESSION_TOKEN_KEY);
+    storageRemove(SESSION_TOKEN_KEY);
 }
 
 /* ---------- 获取 Authorization header ---------- */

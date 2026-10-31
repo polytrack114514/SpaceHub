@@ -71,6 +71,11 @@ function getAvatar(name) {
 window.loadPosts = async function() {
     isLoading = true;
     try {
+        if (!sb && typeof ensureSupabase === 'function') {
+            var client = await ensureSupabase();
+            if (!client) throw new Error('SDK_UNLOADED');
+        }
+        if (!sb) throw new Error('SDK_UNLOADED');
         var result = await sb.from('posts').select('*').order('time', { ascending: false });
         if (result.error) throw result.error;
         posts = result.data || [];
@@ -79,7 +84,17 @@ window.loadPosts = async function() {
     } catch (err) {
         console.error('加载失败:', err);
         var el = document.getElementById('postsList');
-        if (el) el.innerHTML = '<div class="empty-state"><div class="emoji">⚠️</div><p>加载失败，请检查网络连接</p></div>';
+        if (el) {
+            var hint = err && err.message === 'SDK_UNLOADED'
+                ? '数据组件未能加载。可能是浏览器插件拦截了第三方脚本，或当前网络无法访问 CDN。'
+                : '请检查网络连接，或确认浏览器未拦截 supabase.co 的请求。';
+            el.innerHTML = '<div class="empty-state">' +
+                '<div class="emoji">⚠️</div>' +
+                '<p>帖子加载失败</p>' +
+                '<p style="font-size:0.78rem;color:#667788;line-height:1.8;max-width:520px;margin:8px auto 0;">' + hint + '</p>' +
+                '<button class="btn-auth" style="margin-top:14px;" onclick="loadPosts()">重新加载</button>' +
+                '</div>';
+        }
     }
     isLoading = false;
 };
