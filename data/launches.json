@@ -1,0 +1,96 @@
+{
+  "updated": "2026-11-08T04:27:16Z",
+  "launches": [
+    {
+      "id": 1,
+      "rocket": "SpaceX猎鹰重型火箭",
+      "agency": "SpaceX",
+      "date": 1788089160000,
+      "location": "佛罗里达肯尼迪航天中心的39A发射复合体",
+      "mission": "发射罗曼太空望远镜，解决暗能量、系外行星和天体物理学领域的重要问题",
+      "image": "https://assets.science.nasa.gov/dynamicimage/assets/science/missions/rst/science/Roman-launchpage-banner.png?w=900&h=483&fit=crop&crop=faces%2Cfocalpoint",
+      "description": "罗曼计划于2026年8月30日美国东部时间上午7：26，乘坐SpaceX猎鹰重型火箭从佛罗里达肯尼迪航天中心的39A发射复合体发射。",
+      "status": "tentative",
+      "created_at": "2026-08-04T01:28:16.679883+00:00",
+      "result": "success"
+    },
+    {
+      "id": 3,
+      "rocket": "Starship IFT-14",
+      "agency": "SpaceX",
+      "date": 1790596080000,
+      "location": "德州星际基地 Starbase",
+      "mission": "第14次试飞 · 尝试用发射塔机械臂捕获超重型助推器 (塔捕)，并验证飞船再入隔热盾改进效果",
+      "image": "https://i.imglt.com/20260920/fe8df9f29afbd8ec4b088409e2ae594e.jpeg",
+      "description": "",
+      "status": "tentative",
+      "created_at": "2026-08-04T05:56:43.154649+00:00",
+      "result": "partial"
+    },
+    {
+      "id": 17,
+      "rocket": "Starship IFT-14",
+      "agency": "SpaceX",
+      "date": 1794628560000,
+      "location": "得克萨斯州博卡奇卡星际基地",
+      "mission": "",
+      "image": "https://polytrack114514.github.io/img/287b611d5eac46d949bf8791b6f1a5a7-i48j.gif",
+      "description": "",
+      "status": "scheduled",
+      "created_at": "2026-11-08T03:56:55.487815+00:00",
+      "result": "pending"
+    },
+    {
+      "id": 11,
+      "rocket": "Artemis IV",
+      "agency": "NASA",
+      "date": null,
+      "location": "",
+      "mission": "Humanity's return to the lunar surface",
+      "image": "https://www.nasa.gov/wp-content/uploads/2023/06/hls-eva-apr2020.jpg?resize=768,432",
+      "description": "Artemis IV will be one of the most complex undertakings of engineering and human ingenuity in the history of deep space exploration, exploring the lunar South Pole region. The astronauts’ observations, samples, and data collected will expand our understanding of our solar system and home planet, while inspiring the Artemis Generation.",
+      "status": "tbd",
+      "created_at": "2026-08-07T04:19:45.281583+00:00",
+      "result": "pending"
+    },
+    {
+      "id": 10,
+      "rocket": "Artemis III",
+      "agency": "NASA",
+      "date": null,
+      "location": "",
+      "mission": "Demonstrate Critical Systems for Lunar Landing",
+      "image": "https://images-assets.nasa.gov/image/MAF_20260420_CS3_Rollout_UAS15/MAF_20260420_CS3_Rollout_UAS15~large.jpg?w=1920&h=1280&fit=crop&crop=faces%2Cfocalpoint",
+      "description": "Artemis III will carry out a series of objectives in low Earth orbit designed to demonstrate critical systems needed for future lunar landings, beginning with Artemis IV. During the mission, the SLS (Space Launch System) rocket will launch four crew members aboard the Orion spacecraft from NASA’s Kennedy Space Center in Florida.",
+      "status": "tbd",
+      "created_at": "2026-08-07T04:08:36.954865+00:00",
+      "result": "pending"
+    },
+    {
+      "id": 13,
+      "rocket": "长征二号 F 遥二十四 / 神舟二十四号载人飞船",
+      "agency": "中国载人航天工程办公室",
+      "date": null,
+      "location": "酒泉卫星发射中心",
+      "mission": "中国空间站航天员轮换，3 名航天员乘组",
+      "image": "",
+      "description": "神舟二十四号将与空间站核心舱前向端口对接，执行航天员在轨轮换任务，持续推进 1 年期驻留试验。本次任务可能搭载外籍航天员。",
+      "status": "tbd",
+      "created_at": "2026-08-07T05:36:05.64767+00:00",
+      "result": "pending"
+    },
+    {
+      "id": 5,
+      "rocket": "长征五号 / 嫦娥七号",
+      "agency": "中国航天科技集团 (CASC）",
+      "date": null,
+      "location": "文昌航天发射场",
+      "mission": "嫦娥七号执行月球南极探测任务，将开展月球环境与资源勘查",
+      "image": "https://ts4.tc.mm.bing.net/th/id/OIP-C.lMunDx7zlMwxDNmS3nK3fAAAAA?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+      "description": "",
+      "status": "tbd",
+      "created_at": "2026-08-04T06:25:30.591157+00:00",
+      "result": "pending"
+    }
+  ]
+}

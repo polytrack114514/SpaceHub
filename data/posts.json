@@ -1,0 +1,96 @@
+{
+  "updated": "2026-11-08T04:27:16Z",
+  "posts": [
+    {
+      "id": "1791173841484_0uxyorxww",
+      "title": "我怎么搞了个超大BUG？",
+      "content": "5",
+      "author": "SpaceHub官方",
+      "avatar": "🚀",
+      "image": "https://polytrack114514.github.io/storage/boarding-pass-Shen-Xiong.jpeg",
+      "time": 1791173841484,
+      "likes": 666,
+      "comments": [
+        {
+          "id": "1791363598929_vymre5",
+          "time": 1791363598929,
+          "author": "NASA",
+          "content": "终于改好了"
+        }
+      ],
+      "pinned": false,
+      "source_url": "",
+      "edit_history": []
+    },
+    {
+      "id": "1790841883774_13tu5wguk",
+      "title": "SpaceHub今日正式公开注册账号入口",
+      "content": "目前暂无版本号",
+      "author": "SpaceHub官方",
+      "avatar": "🚀",
+      "image": "",
+      "time": 1790841883774,
+      "likes": 1,
+      "comments": [],
+      "pinned": true,
+      "source_url": "https://polytrack114514.github.io/SpaceHub/sign-up",
+      "edit_history": []
+    },
+    {
+      "id": "1790841326447_e6d82nnxt",
+      "title": "10.1国庆快乐",
+      "content": "同志们！今天是国庆！\n庆祝中华人民共和国成立77周年 ！爱我中华！生于浩瀚！",
+      "author": "SpaceHub官方",
+      "avatar": "🚀",
+      "image": "https://i.imglt.com/20261001/ac5e69d27938ae09001e22c5c418d5a4.avif",
+      "time": 1790841326447,
+      "likes": 1,
+      "comments": [],
+      "pinned": true,
+      "source_url": "",
+      "edit_history": []
+    },
+    {
+      "id": "1787813729711_napfmqs6r",
+      "title": "美国宇航局的南希·格雷斯·罗曼太空望远镜抵达机库",
+      "content": "NASA的南希·格蕾丝·罗曼太空望远镜于周二抵达佛罗里达肯尼迪航天中心39A发射复合体的SpaceX机库，距离其计划发射仅几天。\n\n罗曼火箭于8月24日开始夜间飞行，从有效载荷危险维修设施出发，自6月起一直在进行发射前处理。一队车辆护送罗曼进入猎鹰重型整流罩前往机库，沿途监控以确保机库正常运行。\n\n未来几天，团队将将罗曼与机库内的SpaceX猎鹰重型火箭对接。NASA发射服务负责该任务的发射准备，这是继Psyche、GOES-U（地球同步运行环境卫星U）和欧罗巴快船之后，该项目第四次搭载猎鹰重型火箭发射。Roman的一枚侧助推器曾在GOES-U任务中飞行。\n\nNASA、Roman和SpaceX团队将于8月28日星期五举办发射准备评估，进行最终的“通过/否”投票，为8月30日星期日东部时间上午7：26在肯尼迪发射复合体39A发射站的计划发射做准备。\n\n......请查看完整->📄内容来源",
+      "author": "NASA",
+      "avatar": "https://www.nasa.gov/wp-content/themes/nasa/assets/images/nasa-logo.svg",
+      "image": "https://images-assets.nasa.gov/image/KSC-20260825-PH-SER01_0002/KSC-20260825-PH-SER01_0002~large.jpg?w=1536&h=1024&fit=crop&crop=faces%2Cfocalpoint",
+      "time": 1787813729711,
+      "likes": 0,
+      "comments": [],
+      "pinned": false,
+      "source_url": "https://science.nasa.gov/blogs/roman/2026/08/25/nasas-nancy-grace-roman-space-telescope-arrives-at-hangar/",
+      "edit_history": []
+    },
+    {
+      "id": "1786158173329_p5zi4xyki",
+      "title": "马斯克 Terafab Texas 将成为迄今为止地球上规模最大 价值最高的建筑",
+      "content": "2026年8月6日（美东时间），SpaceX与特斯拉联合宣布，双方首期将投入 168亿美元，在得克萨斯州格莱姆斯县（Grimes County）建设名为 Terafab 的超级芯片制造工厂。马斯克当天在社交媒体上表示，Terafab Texas 将成为\"地球上规模最大、价值最高的建筑\"\n\n根据官方披露，该工厂规划制造空间超过 1亿平方英尺（约合930万平方米），马斯克称其建成后将达到五角大楼的50倍。项目采用多阶段建设，首期投资168亿美元，但此前监管文件显示，若完成全部扩建阶段，总投资可能高达 1190亿美元\n\nTerafab定位为垂直整合的半导体超级工厂，将集先进逻辑芯片、存储芯片的制造、封装、测试于一体，目标年产超过 1太瓦（1 terawatt）的AI算力，远超当前全球芯片总产能。产出的芯片将用于特斯拉Optimus人形机器人、Cybercab无人驾驶出租车，以及SpaceX的太空数据中心等项目\n\n不过需要注意的是，这目前仍是马斯克基于规划蓝图做出的前瞻性宣称，工厂尚处于破土动工阶段，最终能否完全兑现这一\"史上最大、最贵建筑\"的定位，还需视后续建设进展而定。",
+      "author": "SpaceX",
+      "avatar": "https://i.imglt.com/20260802/f61b49848b4eda0e49a759683af30679.jpg",
+      "image": "",
+      "time": 1786158173329,
+      "likes": 0,
+      "comments": [],
+      "pinned": false,
+      "source_url": "https://www.bilibili.com/video/BV1N9un6FErQ",
+      "edit_history": []
+    },
+    {
+      "id": "1785807269618_a1q457ssc",
+      "title": "NASA为罗马太空望远镜加注燃料，计划8月底发射",
+      "content": "技术人员完成了为NASA南希·格雷斯·罗曼太空望远镜加注燃料，使它离发射更近了一步。7月25日，团队完成了在佛罗里达肯尼迪航天中心有效载荷危险维修设施的天文台，小心装载290加仑肼燃料的操作。\n\n发射并与火箭分离后，罗曼将利用这种机载推进剂执行机动，飞向距离地球约一百万英里的太阳-地球拉格朗日点2（L2）。在那里，距离月球约四倍，将成为天文学的理想栖息地。\n\n......请查看完整->📄内容来源",
+      "author": "NASA",
+      "avatar": "https://www.nasa.gov/wp-content/themes/nasa/assets/images/nasa-logo.svg",
+      "image": "https://assets.science.nasa.gov/dynamicimage/assets/science/missions/rst/KSC-20260720-PH-SER01_0001.jpg?w=4364&h=5455&fit=crop&crop=faces%2Cfocalpoint",
+      "time": 1785807269618,
+      "likes": 0,
+      "comments": [],
+      "pinned": false,
+      "source_url": "https://science.nasa.gov/blogs/roman/",
+      "edit_history": []
+    }
+  ]
+}

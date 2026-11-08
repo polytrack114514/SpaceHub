@@ -116,6 +116,32 @@ function readStoredJSON(key, fallback) {
     try { return JSON.parse(raw); } catch (e) { return fallback; }
 }
 
+/* ---------- 静态快照兜底 ----------
+   部分手机自带浏览器 / 运营商网络无法直连 supabase.co，
+   此时改用站点同源的 data/*.json 快照，保证内容仍能显示。 */
+var snapshotMode = false;
+
+function loadStaticJSON(url) {
+    return new Promise(function(resolve, reject) {
+        try {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.timeout = 12000;
+            xhr.onload = function() {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try { resolve(JSON.parse(xhr.responseText)); }
+                    catch (e) { reject(e); }
+                } else {
+                    reject(new Error('HTTP ' + xhr.status));
+                }
+            };
+            xhr.onerror = function() { reject(new Error('network error')); };
+            xhr.ontimeout = function() { reject(new Error('timeout')); };
+            xhr.send();
+        } catch (e) { reject(e); }
+    });
+}
+
 /* ---------- 全局状态 ---------- */
 let currentUser = readStoredJSON(USER_KEY, null);
 let likedPosts  = readStoredJSON(LIKED_POSTS_KEY, {});

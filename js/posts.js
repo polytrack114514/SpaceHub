@@ -79,25 +79,57 @@ window.loadPosts = async function() {
         var result = await sb.from('posts').select('*').order('time', { ascending: false });
         if (result.error) throw result.error;
         posts = result.data || [];
+        snapshotMode = false;
         renderPosts();
         await loadLaunches();
     } catch (err) {
         console.error('加载失败:', err);
-        var el = document.getElementById('postsList');
-        if (el) {
-            var hint = err && err.message === 'SDK_UNLOADED'
-                ? '数据组件未能加载。可能是浏览器插件拦截了第三方脚本，或当前网络无法访问 CDN。'
-                : '请检查网络连接，或确认浏览器未拦截 supabase.co 的请求。';
-            el.innerHTML = '<div class="empty-state">' +
-                '<div class="emoji">⚠️</div>' +
-                '<p>帖子加载失败</p>' +
-                '<p style="font-size:0.78rem;color:#667788;line-height:1.8;max-width:520px;margin:8px auto 0;">' + hint + '</p>' +
-                '<button class="btn-auth" style="margin-top:14px;" onclick="loadPosts()">重新加载</button>' +
-                '</div>';
+        // 直连 Supabase 失败时改用同源静态快照
+        var snap = null;
+        try { snap = await loadStaticJSON('data/posts.json'); } catch (e2) { snap = null; }
+        if (snap && Array.isArray(snap.posts) && snap.posts.length) {
+            posts = snap.posts;
+            snapshotMode = true;
+            renderPosts();
+            showSnapshotBanner(snap.updated);
+            await loadLaunches();
+        } else {
+            var el = document.getElementById('postsList');
+            if (el) {
+                var hint = err && err.message === 'SDK_UNLOADED'
+                    ? '数据组件未能加载。可能是浏览器插件拦截了第三方脚本，或当前网络无法访问 CDN。'
+                    : '当前网络无法连接 data.supabase.co，且静态快照也不可用。';
+                el.innerHTML = '<div class="empty-state">' +
+                    '<div class="emoji">⚠️</div>' +
+                    '<p>帖子加载失败</p>' +
+                    '<p style="font-size:0.78rem;color:#667788;line-height:1.8;max-width:520px;margin:8px auto 0;">' + hint + '</p>' +
+                    '<button class="btn-auth" style="margin-top:14px;" onclick="loadPosts()">重新加载</button>' +
+                    '</div>';
+            }
         }
     }
     isLoading = false;
 };
+
+/* 快照模式提示条 */
+function showSnapshotBanner(updated) {
+    var list = document.getElementById('postsList');
+    if (!list || document.getElementById('snapshotBanner')) return;
+    var when = '';
+    if (updated) {
+        var d = new Date(updated);
+        if (!isNaN(d.getTime())) {
+            var hh = ('0' + d.getHours()).slice(-2);
+            var mm = ('0' + d.getMinutes()).slice(-2);
+            when = '，快照时间 ' + (d.getMonth() + 1) + '/' + d.getDate() + ' ' + hh + ':' + mm;
+        }
+    }
+    var bar = document.createElement('div');
+    bar.id = 'snapshotBanner';
+    bar.className = 'snapshot-banner';
+    bar.innerHTML = '📦 当前为离线快照模式：设备无法直连数据服务，内容可能不是最新' + when;
+    list.parentNode.insertBefore(bar, list);
+}
 
 /* ---------- 加载发射数据（只读 + 首次插入默认数据走 Edge Function） ---------- */
 window.loadLaunches = async function() {
@@ -141,6 +173,18 @@ window.loadLaunches = async function() {
         }
     } catch (err) {
         console.error('加载发射数据失败:', err);
+        // 直连失败时改用同源静态快照
+        try {
+            var snap = await loadStaticJSON('data/launches.json');
+            if (snap && Array.isArray(snap.launches) && snap.launches.length) {
+                launches = snap.launches;
+                launchesCache = snap.launches;
+                launchesCacheTime = Date.now();
+                renderLaunches && renderLaunches();
+            }
+        } catch (e2) {
+            console.error('发射数据快照不可用:', e2);
+        }
     }
 };
 

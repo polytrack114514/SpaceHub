@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '23 */6 * * *'
+    - cron: '23 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -89,6 +89,37 @@ jobs:
           else
             echo "Sentry sync failed, keeping the existing data/sentry.json"
           fi
+      - name: Sync posts & launches snapshot
+        run: |
+          python3 - <<'PY'
+          import json, re, urllib.request, datetime
+
+          cfg = open('js/config.js', encoding='utf-8').read()
+          url = re.search(r"SUPABASE_URL\s*=\s*'([^']+)'", cfg).group(1)
+          key = re.search(r"SUPABASE_ANON_KEY\s*=\s*'([^']+)'", cfg).group(1)
+          stamp = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+          stamp = stamp.isoformat().replace('+00:00', 'Z')
+
+          def fetch(table, order):
+              req = urllib.request.Request(
+                  '{}/rest/v1/{}?select=*&order={}'.format(url, table, order),
+                  headers={'apikey': key, 'Authorization': 'Bearer ' + key})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.loads(r.read().decode('utf-8'))
+
+          for table, order, out in (
+              ('posts', 'time.desc', 'data/posts.json'),
+              ('launches', 'date.asc', 'data/launches.json'),
+          ):
+              try:
+                  rows = fetch(table, order)
+              except Exception as e:
+                  print('skip {}: {}'.format(table, e))
+                  continue
+              with open(out, 'w', encoding='utf-8') as f:
+                  json.dump({'updated': stamp, table: rows}, f, ensure_ascii=False, indent=2)
+              print('synced {}: {} rows'.format(table, len(rows)))
+          PY
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
