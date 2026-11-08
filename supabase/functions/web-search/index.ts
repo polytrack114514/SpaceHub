@@ -29,11 +29,17 @@ Deno.serve(async (req: Request) => {
 
   let query = ''
   let maxResults = 3
+  let topic: string | undefined
+  let days: number | undefined
   try {
     const body = await req.json()
     query = String(body.query || '').trim()
     if (body.max_results) {
       maxResults = Math.min(Math.max(Number(body.max_results) || 3, 1), MAX_RESULTS)
+    }
+    if (body.topic === 'news') {
+      topic = 'news'
+      days = Math.min(Math.max(Number(body.days) || 30, 1), 90)
     }
   } catch {
     return jsonResponse({ error: '请求体不是合法 JSON' }, 400)
@@ -57,7 +63,9 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         query,
         max_results: maxResults,
-        search_depth: apiKey ? 'basic' : 'basic',
+        search_depth: 'basic',
+        topic,
+        days,
         include_answer: false,
         include_raw_content: false,
       }),
@@ -72,6 +80,7 @@ Deno.serve(async (req: Request) => {
     const results = (data.results || []).map((r: Record<string, unknown>) => ({
       title: String(r.title || '').slice(0, 120),
       url: String(r.url || ''),
+      published_date: r.published_date ? String(r.published_date).slice(0, 32) : '',
       content: String(r.content || '').slice(0, 400),
     }))
 

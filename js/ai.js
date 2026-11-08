@@ -15,6 +15,8 @@ var aiApiKey = 'sb_publishable_J0U_8Wc50piNP-yluDx33g_WTgfzYwv';
 var AI_RULES = [
     '你是 SpaceHub 的航天助手。',
     '信息优先级：【联网检索】实时结果 > 【站内知识库】 > 你自己的训练知识（截止 2026年7月）。',
+    '两处资料冲突时，以时间更近的为准，并简要说明差异。',
+    '有【联网检索】结果时，必须给出其中的具体事实（日期、结果、技术细节），不要只回答“暂无更多信息”。',
     '用【站内知识库】作答时，末尾标注“来源：SpaceHub 发射数据库”。',
     '用【联网检索】作答时，在末尾另起一行以“参考：”列出你实际引用的网址。',
     '两者都没有覆盖、且属于 2026年7月之后的事件时，直接说明“这超出我的离线知识范围”，不要猜测，也不要编造任务细节。',
@@ -34,16 +36,19 @@ function shouldWebSearch(q) {
 async function fetchWebResults(question) {
     if (!shouldWebSearch(question)) return null;
     var q = String(question).slice(0, 200);
+    // 时效性问题走新闻索引，避免命中过时的百科条目
+    var timed = /最新|最近|进展|新闻|动态|今天|昨天|本周|本月|今年|当前|什么时候|发射|试飞|计划/.test(q);
+    var opts = timed ? { topic: 'news', days: 30 } : {};
 
     // 首选：自家 Supabase 代理（key 藏在服务端）
-    var viaProxy = await tavilyRequest(webSearchUrl, q, true);
+    var viaProxy = await tavilyRequest(webSearchUrl, q, true, opts);
     if (viaProxy) return viaProxy;
 
     // 降级：代理未部署时走 Tavily keyless（无需 key，按 IP 限速）
-    return await tavilyRequest('https://api.tavily.com/search', q, false);
+    return await tavilyRequest('https://api.tavily.com/search', q, false, opts);
 }
 
-async function tavilyRequest(url, query, isProxy) {
+async function tavilyRequest(url, query, isProxy, opts) {
     var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
     try {
@@ -52,10 +57,10 @@ async function tavilyRequest(url, query, isProxy) {
         if (isProxy) {
             headers['apikey'] = aiApiKey;
             headers['Authorization'] = 'Bearer ' + aiApiKey;
-            body = JSON.stringify({ query: query, max_results: 3 });
+            body = JSON.stringify({ query: query, max_results: 3, topic: opts.topic, days: opts.days });
         } else {
             headers['X-Tavily-Access-Mode'] = 'keyless';
-            body = JSON.stringify({ query: query, max_results: 3, include_answer: false });
+            body = JSON.stringify({ query: query, max_results: 3, topic: opts.topic, days: opts.days, include_answer: false });
         }
         var resp = await fetch(url, {
             method: 'POST',
@@ -78,9 +83,10 @@ function formatWebContext(results) {
     if (!results || !results.length) return '';
     var lines = ['【联网检索 · 实时网页结果】（这些内容晚于你的知识截止，可据此回答）'];
     for (var i = 0; i < results.length; i++) {
-        lines.push((i + 1) + '. ' + (results[i].title || '无标题'));
-        lines.push('   网址：' + (results[i].url || ''));
-        if (results[i].content) lines.push('   摘要：' + results[i].content);
+        var r = results[i];
+        lines.push((i + 1) + '. ' + (r.title || '无标题') + (r.published_date ? '（' + String(r.published_date).slice(0, 16) + '）' : ''));
+        lines.push('   网址：' + (r.url || ''));
+        if (r.content) lines.push('   摘要：' + r.content);
     }
     return lines.join('\n');
 }
