@@ -1547,10 +1547,10 @@ async function loadEarthNow() {
     stopEarthNow();
     panel.innerHTML = '<div style="text-align:center;padding:40px;color:#667788;">🌍 正在获取 DSCOVR 拍摄的最新地球影像...</div>';
     try {
-        // 官方文档入口优先；若 api.nasa.gov 网关异常则回退到 EPIC 官方接口
+        // EPIC 官方接口（旧的 /api/natural/images 已下线，统一走 /api/natural）
         var endpoints = [
-            'https://api.nasa.gov/EPIC/api/natural/images?api_key=' + encodeURIComponent(NASA_API_KEY),
-            'https://epic.gsfc.nasa.gov/api/natural/images'
+            'https://epic.gsfc.nasa.gov/api/natural',
+            'https://api.nasa.gov/EPIC/api/natural?api_key=' + encodeURIComponent(NASA_API_KEY)
         ];
         var list = null, lastErr = null;
         for (var ei = 0; ei < endpoints.length; ei++) {
@@ -1567,10 +1567,14 @@ async function loadEarthNow() {
         if (sdCurrentTab !== 'earth') return;
 
         var item = list[list.length - 1];
-        var mt = String(item.date || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+        // 归档目录以 identifier（YYYYMMDDhhmmss）为准，回退到 date 字段
+        var idm = String(item.identifier || '').match(/^(\d{4})(\d{2})(\d{2})/);
+        var mt = idm || String(item.date || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
         if (!mt) throw new Error('影像日期格式异常');
         var y = mt[1], mo = mt[2], da = mt[3];
-        var shotUtc = new Date(Date.UTC(+y, +mo - 1, +da, +mt[4], +mt[5], +mt[6]));
+        var dts = String(item.date || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+        if (!dts) throw new Error('影像时间格式异常');
+        var shotUtc = new Date(Date.UTC(+dts[1], +dts[2] - 1, +dts[3], +dts[4], +dts[5], +dts[6]));
         var imgUrl = 'https://epic.gsfc.nasa.gov/archive/natural/' + y + '/' + mo + '/' + da + '/png/' + item.image + '.png';
 
         var h = '<div class="sd-loc-row"><span>🌍 DSCOVR / EPIC · 最新一帧自然色影像</span><button onclick="loadEarthNow()">刷新</button></div>';
