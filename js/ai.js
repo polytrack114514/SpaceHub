@@ -6,6 +6,94 @@
 var aiMessages = [];
 var aiProxyUrl = 'https://tktfrrvaqwbtdhiqwnna.supabase.co/functions/v1/ai-chat-proxy';
 var aiInitialized = false;
+var aiApiKey = 'sb_publishable_J0U_8Wc50piNP-yluDx33g_WTgfzYwv';
+
+/* ---------- 站内知识库检索 ----------
+   代理函数只做纯对话转发，模型本身没有联网、知识截止 2026-07。
+   这里把站内实时同步的发射数据检索出来，作为 system 上下文注入，
+   让回答以站内数据为准，而不是凭训练记忆。 */
+var AI_RULES = [
+    '你是 SpaceHub 的航天助手。优先使用【站内知识库】提供的资料回答，它比你的训练数据更新。',
+    '若站内资料与问题相关，请据此作答，并在末尾标注“来源：SpaceHub 发射数据库”。',
+    '若站内资料没有覆盖该问题，且属于你的知识截止（2026年7月）之后的事件，请直接说明“这超出我的离线知识范围”，不要猜测，也不要编造任务细节。',
+    '回答用简体中文，简洁准确。'
+].join('\n');
+
+var STATUS_CN = {
+    tbd: '日期待定', tentative: '待定', go: '即将发射', scheduled: '已排期',
+    success: '已发射-成功', failure: '已发射-失败', partial: '已发射-部分成功',
+    pending: '待定'
+};
+
+function launchTokens(l) {
+    var text = [l.rocket, l.mission, l.agency, l.location].join(' ');
+    var out = [];
+    var latin = text.match(/[A-Za-z0-9][A-Za-z0-9\-.]+/g) || [];
+    for (var i = 0; i < latin.length; i++) out.push(latin[i].toLowerCase());
+    var cjk = text.match(/[\u4e00-\u9fa5]{2,}/g) || [];
+    for (var j = 0; j < cjk.length; j++) out.push(cjk[j]);
+    return out;
+}
+
+function launchDateText(ts) {
+    if (!ts) return '未公布';
+    var d = new Date(Number(ts));
+    if (isNaN(d.getTime())) return '未公布';
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+
+function formatLaunchLine(l) {
+    var parts = [];
+    parts.push('任务：' + (l.mission || '未命名'));
+    parts.push('火箭：' + (l.rocket || '未知'));
+    if (l.agency) parts.push('机构：' + l.agency);
+    if (l.location) parts.push('地点：' + l.location);
+    parts.push('日期：' + launchDateText(l.date));
+    parts.push('状态：' + (STATUS_CN[l.status] || l.status || '未知'));
+    if (l.result) parts.push('结果：' + l.result);
+    var line = '- ' + parts.join('；');
+    if (l.description) line += '\n  说明：' + String(l.description).slice(0, 220);
+    return line;
+}
+
+async function buildSiteContext(question) {
+    var list = (typeof launches !== 'undefined' && Array.isArray(launches)) ? launches.slice() : [];
+    if (!list.length) {
+        try {
+            var snap = await loadStaticJSON('data/launches.json');
+            if (snap && Array.isArray(snap.launches)) list = snap.launches;
+        } catch (e) { /* 没有快照就跳过 */ }
+    }
+    if (!list.length) return '';
+
+    var q = String(question || '').toLowerCase();
+    var scored = [];
+    for (var i = 0; i < list.length; i++) {
+        var toks = launchTokens(list[i]);
+        var score = 0;
+        for (var t = 0; t < toks.length; t++) {
+            if (toks[t].length >= 2 && q.indexOf(toks[t]) !== -1) score += toks[t].length;
+        }
+        if (score >= 4) scored.push({ l: list[i], s: score });
+    }
+    scored.sort(function (a, b) { return b.s - a.s; });
+
+    var picked = [];
+    for (var k = 0; k < scored.length && picked.length < 3; k++) picked.push(scored[k].l);
+
+    // 泛问「最新/即将」时补充近期任务
+    if (!picked.length && /最新|近期|即将|下一次|什么时候|发射计划/.test(q)) {
+        var upcoming = list.filter(function (x) { return x.status !== 'success' && x.status !== 'failure'; });
+        upcoming.sort(function (a, b) { return Number(a.date || 9e15) - Number(b.date || 9e15); });
+        picked = upcoming.slice(0, 3);
+    }
+
+    if (!picked.length) return '';
+
+    var lines = ['【站内知识库 · 火箭发射任务】（数据由本站实时同步，优先于你的训练记忆）'];
+    for (var p = 0; p < picked.length; p++) lines.push(formatLaunchLine(picked[p]));
+    return lines.join('\n');
+}
 
 function initAI() {
     if (aiInitialized) return;
@@ -90,14 +178,18 @@ async function sendAIMessage() {
     showAITyping();
 
     try {
+        var siteCtx = await buildSiteContext(msg);
+        var payload = [{ role: 'system', content: AI_RULES + (siteCtx ? '\n\n' + siteCtx : '') }]
+            .concat(aiMessages.slice(-20));
+
         var response = await fetch(aiProxyUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'apikey': 'sb_publishable_J0U_8Wc50piNP-yluDx33g_WTgfzYwv',
-                'Authorization': 'Bearer sb_publishable_J0U_8Wc50piNP-yluDx33g_WTgfzYwv'
+                'apikey': aiApiKey,
+                'Authorization': 'Bearer ' + aiApiKey
             },
-            body: JSON.stringify({ messages: aiMessages })
+            body: JSON.stringify({ messages: payload })
         });
 
         if (!response.ok) throw new Error('API ' + response.status);
@@ -284,6 +376,15 @@ async function sendAgnesMessage() {
 
     try {
         var messagesToSend = agnesMessages.slice(-20);
+
+        // 注入站内发射数据：优先按提问检索，其次用当前打开的任务
+        var siteCtx = await buildSiteContext(msg);
+        if (!siteCtx && agnesLaunchContext) {
+            siteCtx = formatLaunchLine(agnesLaunchContext);
+        }
+        var payload = [{ role: 'system', content: AI_RULES + (siteCtx ? '\n\n【站内知识库 · 当前任务】\n' + siteCtx : '') }]
+            .concat(messagesToSend);
+
         var response = await fetch(agnesProxyUrl, {
             method: 'POST',
             headers: {
@@ -291,7 +392,7 @@ async function sendAgnesMessage() {
                 'Authorization': 'Bearer ' + agnesApiKey
             },
             body: JSON.stringify({
-                messages: messagesToSend,
+                messages: payload,
                 launch: agnesLaunchContext
             })
         });
