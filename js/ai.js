@@ -13,11 +13,77 @@ var aiApiKey = 'sb_publishable_J0U_8Wc50piNP-yluDx33g_WTgfzYwv';
    这里把站内实时同步的发射数据检索出来，作为 system 上下文注入，
    让回答以站内数据为准，而不是凭训练记忆。 */
 var AI_RULES = [
-    '你是 SpaceHub 的航天助手。优先使用【站内知识库】提供的资料回答，它比你的训练数据更新。',
-    '若站内资料与问题相关，请据此作答，并在末尾标注“来源：SpaceHub 发射数据库”。',
-    '若站内资料没有覆盖该问题，且属于你的知识截止（2026年7月）之后的事件，请直接说明“这超出我的离线知识范围”，不要猜测，也不要编造任务细节。',
+    '你是 SpaceHub 的航天助手。',
+    '信息优先级：【联网检索】实时结果 > 【站内知识库】 > 你自己的训练知识（截止 2026年7月）。',
+    '用【站内知识库】作答时，末尾标注“来源：SpaceHub 发射数据库”。',
+    '用【联网检索】作答时，在末尾另起一行以“参考：”列出你实际引用的网址。',
+    '两者都没有覆盖、且属于 2026年7月之后的事件时，直接说明“这超出我的离线知识范围”，不要猜测，也不要编造任务细节。',
     '回答用简体中文，简洁准确。'
 ].join('\n');
+
+/* ---------- 联网检索（Tavily 代理） ---------- */
+var webSearchUrl = 'https://tktfrrvaqwbtdhiqwnna.supabase.co/functions/v1/web-search';
+
+function shouldWebSearch(q) {
+    var s = String(q || '').trim();
+    if (s.length < 4) return false;
+    if (/^(你好|您好|hi|hello|在吗|谢谢|thanks)/i.test(s)) return false;
+    return true;
+}
+
+async function fetchWebResults(question) {
+    if (!shouldWebSearch(question)) return null;
+    var q = String(question).slice(0, 200);
+
+    // 首选：自家 Supabase 代理（key 藏在服务端）
+    var viaProxy = await tavilyRequest(webSearchUrl, q, true);
+    if (viaProxy) return viaProxy;
+
+    // 降级：代理未部署时走 Tavily keyless（无需 key，按 IP 限速）
+    return await tavilyRequest('https://api.tavily.com/search', q, false);
+}
+
+async function tavilyRequest(url, query, isProxy) {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
+    try {
+        var headers = { 'Content-Type': 'application/json' };
+        var body;
+        if (isProxy) {
+            headers['apikey'] = aiApiKey;
+            headers['Authorization'] = 'Bearer ' + aiApiKey;
+            body = JSON.stringify({ query: query, max_results: 3 });
+        } else {
+            headers['X-Tavily-Access-Mode'] = 'keyless';
+            body = JSON.stringify({ query: query, max_results: 3, include_answer: false });
+        }
+        var resp = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: body,
+            signal: ctrl ? ctrl.signal : undefined
+        });
+        if (!resp.ok) return null;
+        var data = await resp.json();
+        if (!data || !data.results || !data.results.length) return null;
+        return data.results;
+    } catch (e) {
+        return null; // 检索不可用时静默退回站内知识库
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
+}
+
+function formatWebContext(results) {
+    if (!results || !results.length) return '';
+    var lines = ['【联网检索 · 实时网页结果】（这些内容晚于你的知识截止，可据此回答）'];
+    for (var i = 0; i < results.length; i++) {
+        lines.push((i + 1) + '. ' + (results[i].title || '无标题'));
+        lines.push('   网址：' + (results[i].url || ''));
+        if (results[i].content) lines.push('   摘要：' + results[i].content);
+    }
+    return lines.join('\n');
+}
 
 var STATUS_CN = {
     tbd: '日期待定', tentative: '待定', go: '即将发射', scheduled: '已排期',
@@ -178,9 +244,12 @@ async function sendAIMessage() {
     showAITyping();
 
     try {
-        var siteCtx = await buildSiteContext(msg);
-        var payload = [{ role: 'system', content: AI_RULES + (siteCtx ? '\n\n' + siteCtx : '') }]
-            .concat(aiMessages.slice(-20));
+        var found = await Promise.all([buildSiteContext(msg), fetchWebResults(msg)]);
+        var context = AI_RULES;
+        if (found[1]) context += '\n\n' + formatWebContext(found[1]);
+        if (found[0]) context += '\n\n' + found[0];
+
+        var payload = [{ role: 'system', content: context }].concat(aiMessages.slice(-20));
 
         var response = await fetch(aiProxyUrl, {
             method: 'POST',
@@ -377,13 +446,14 @@ async function sendAgnesMessage() {
     try {
         var messagesToSend = agnesMessages.slice(-20);
 
-        // 注入站内发射数据：优先按提问检索，其次用当前打开的任务
-        var siteCtx = await buildSiteContext(msg);
-        if (!siteCtx && agnesLaunchContext) {
-            siteCtx = formatLaunchLine(agnesLaunchContext);
-        }
-        var payload = [{ role: 'system', content: AI_RULES + (siteCtx ? '\n\n【站内知识库 · 当前任务】\n' + siteCtx : '') }]
-            .concat(messagesToSend);
+        // 并行：站内发射数据 + 实时网页检索
+        var found = await Promise.all([buildSiteContext(msg), fetchWebResults(msg)]);
+        var context = AI_RULES;
+        if (found[1]) context += '\n\n' + formatWebContext(found[1]);
+        var siteCtx = found[0] || (agnesLaunchContext ? formatLaunchLine(agnesLaunchContext) : '');
+        if (siteCtx) context += '\n\n【站内知识库 · 当前任务】\n' + siteCtx;
+
+        var payload = [{ role: 'system', content: context }].concat(messagesToSend);
 
         var response = await fetch(agnesProxyUrl, {
             method: 'POST',
