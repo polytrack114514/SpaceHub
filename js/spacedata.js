@@ -56,7 +56,11 @@ var sdSources = {
     isspass:   'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me',
     aurora:    'NOAA SWPC 太阳风 · 行星际磁场 · X 射线耀斑 · Kp 指数',
     fleet:     'satellite.js SGP4 轨道推算 · TLE 数据 tle.ivanstanojevic.me',
-    sentry:    'NASA/JPL Sentry 撞击风险数据 · 每 6 小时同步'
+    sentry:    'NASA/JPL Sentry 撞击风险数据 · 每 6 小时同步',
+    earth:     'NASA EPIC · DSCOVR 卫星 L1 点拍摄',
+    sun:       'NASA SDO 太阳动力学观测台 · NOAA SWPC 耀斑数据',
+    tiangong:  'howmanypeopleareinspacerightnow.com · 定时同步',
+    orbital:   'ESA Space Environment Report · 公开年度统计'
 };
 var sdCurrentTab = 'iss';
 
@@ -73,10 +77,32 @@ var sdTrustMeta = {
     isspass:   { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' },
     aurora:    { kind: 'live',   label: '实时',      note: 'NOAA SWPC 空间天气数据' },
     fleet:     { kind: 'calc',   label: '轨道推算',  note: 'SGP4 推算，TLE 缓存 12 小时' },
-    sentry:    { kind: 'sync',   label: '定时同步',  note: 'NASA/JPL Sentry，每 6 小时同步' }
+    sentry:    { kind: 'sync',   label: '定时同步',  note: 'NASA/JPL Sentry，每 6 小时同步' },
+    earth:     { kind: 'live',   label: '实时',      note: 'NASA EPIC，每日更新，通常为前一日影像' },
+    sun:       { kind: 'live',   label: '实时',      note: 'SDO 影像约每 15 分钟更新' },
+    tiangong:  { kind: 'sync',   label: '定时同步',  note: '每 6 小时同步，失败时保留上次数据' },
+    orbital:   { kind: 'static', label: '静态数据',  note: '年度更新的公开统计，非实时' }
 };
 var sdTrustColors = { live: '#40ff88', sync: '#00e8ff', calc: '#5b8fff', static: '#8899aa', mix: '#b558ff' };
 var sdFreshAt = {};
+
+// 🛰️ 在轨物体静态统计：集中维护，方便以后手工更新（口径见面板底部说明）
+var SD_ORBITAL_STATS = {
+    updated: '2026 年',
+    note: '统计口径：ESA Space Environment Report / 公开年度统计 · 数据更新至 2026 年。数字为国际公开口径的近似值，非实时数据。',
+    items: [
+        { icon: '🛰️', value: '约 1.4 万', label: '在轨活跃卫星', note: '2026 年 · 全球在轨且正常工作' },
+        { icon: '📦', value: '约 4.4 万', label: '可编目在轨物体', note: '2026 年 · 被持续跟踪编目' },
+        { icon: '💥', value: '约 4.0 万', label: '大于 10cm 的碎片', note: '估计值 · 含失效卫星与火箭残骸' },
+        { icon: '🚀', value: '约 260 次', label: '全球轨道发射', note: '2025 全年 · 各国公开统计合计' }
+    ],
+    constellations: [
+        { name: 'Starlink 星链', count: '约 9,000', note: 'SpaceX · 在轨卫星' },
+        { name: 'OneWeb', count: '约 650', note: 'Eutelsat OneWeb · 一代星座' },
+        { name: '千帆 / G60', count: '约 90', note: '上海垣信 · 在轨组网中' },
+        { name: '国网 / GW', count: '约 50', note: '中国星网 · 在轨组网中' }
+    ]
+};
 
 function sdRenderTrust(key) {
     var el = document.getElementById('sdTrust-' + key);
@@ -127,17 +153,22 @@ window.switchSDTab = function(tab, btn) {
     stopISSTracking();
     stopPassReminder();
     stopSatFleet();
+    stopEarthNow();
     if (tab === 'iss') { startISSTracking(); }
         else if (tab === 'moon') { renderMoonPhase(); }
     else if (tab === 'asteroids') { loadAsteroids(); }
     else if (tab === 'crew') { loadISSCrew(); }
+    else if (tab === 'tiangong') { loadTiangongCrew(); }
     else if (tab === 'meteors') { renderMeteorShowers(); }
     else if (tab === 'eclipses') { renderEclipses(); }
     else if (tab === 'launches') { loadLaunchData(); }
     else if (tab === 'tonight') { renderTonightsSky(); }
     else if (tab === 'isspass') { loadISSPasses(); }
     else if (tab === 'aurora') { loadAurora(); }
+    else if (tab === 'earth') { loadEarthNow(); }
+    else if (tab === 'sun') { loadSunPanel(); }
     else if (tab === 'fleet') { loadSatFleet(); }
+    else if (tab === 'orbital') { renderOrbitalPanel(); }
     else if (tab === 'sentry') { loadSentry(); }
 }
 var issTimer = null;
@@ -527,13 +558,13 @@ async function loadISSCrew() {
     };
 
     var fallbackCrew = [
-        { name: 'Jessica Meir', craft: 'ISS Expedition 75 (NASA)', flag: '🇺🇸' },
-        { name: 'Jack Hathaway', craft: 'ISS Expedition 75 (NASA)', flag: '🇺🇸' },
-        { name: 'Anil Menon', craft: 'ISS (Soyuz MS-29, NASA)', flag: '🇺🇸' },
-        { name: 'Sophie Adenot', craft: 'ISS Expedition 75 (ESA)', flag: '🇫🇷' },
-        { name: 'Andrey Fedyaev', craft: 'ISS Expedition 75 (Roscosmos)', flag: '🇷🇺' },
-        { name: 'Pyotr Dubrov', craft: 'ISS (Soyuz MS-29, Roscosmos)', flag: '🇷🇺' },
-        { name: 'Anna Kikina', craft: 'ISS (Soyuz MS-29, Roscosmos)', flag: '🇷🇺' }
+        { name: 'Jessica Meir', agency: 'NASA', flag: '🇺🇸' },
+        { name: 'Jack Hathaway', agency: 'NASA', flag: '🇺🇸' },
+        { name: 'Anil Menon', agency: 'NASA', flag: '🇺🇸' },
+        { name: 'Sophie Adenot', agency: 'ESA', flag: '🇫🇷' },
+        { name: 'Andrey Fedyaev', agency: 'Roscosmos', flag: '🇷🇺' },
+        { name: 'Pyotr Dubrov', agency: 'Roscosmos', flag: '🇷🇺' },
+        { name: 'Anna Kikina', agency: 'Roscosmos', flag: '🇷🇺' }
     ];
 
     var countryInfo = {
@@ -575,6 +606,7 @@ async function loadISSCrew() {
         if (cached && (now - cachedTime) < 3600000) {
             try {
                 var cachedData = JSON.parse(cached);
+                window._sdCrewFailed = false;
                 sdTouch('crew');
                 renderCrewList(cachedData.iss, cachedData.tiangong);
                 return;
@@ -608,6 +640,7 @@ async function loadISSCrew() {
         localStorage.setItem(cacheKey, JSON.stringify({ iss: issCrew, tiangong: tiangongCrew }));
         localStorage.setItem(cacheTimeKey, String(now));
 
+        window._sdCrewFailed = false;
         sdTouch('crew');
         renderCrewList(issCrew, tiangongCrew);
     } catch(e) {
@@ -616,6 +649,7 @@ async function loadISSCrew() {
         if (cached2) {
             try {
                 var cachedData2 = JSON.parse(cached2);
+                window._sdCrewFailed = false;
                 renderCrewList(cachedData2.iss, cachedData2.tiangong);
                 var note2 = document.getElementById('crewPanel');
                 if (note2) {
@@ -627,6 +661,7 @@ async function loadISSCrew() {
                 return;
             } catch(e2) {}
         }
+        window._sdCrewFailed = true;
         renderCrewList(fallbackCrew, []);
         var note = document.getElementById('crewPanel');
         if (note) {
@@ -638,35 +673,48 @@ async function loadISSCrew() {
     }
 
     function renderCrewList(issList, tgList) {
-        var html = '<div class="crew-header-info">🚀 ISS 当前乘组: <strong style="color:#5b8fff;">' + issList.length + '</strong> 名宇航员</div>';
+        window._sdCrewData = { iss: issList || [], tiangong: tgList || [] };
+        sdRenderCrewGroup('crewPanel', issList || [], 'ISS ', '当前 ISS 无人驻留');
+    }
+}
+
+// 乘组卡片渲染（ISS / 天宫共用，保持原有 .crew-* 视觉）
+function sdRenderCrewGroup(panelId, list, stationName, emptyText) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    var html = '';
+    if (!list || !list.length) {
+        html += '<div class="crew-header-info">' + escapeHtml(stationName) + '当前乘组: <strong style="color:#5b8fff;">0</strong> 名宇航员</div>';
+        html += '<div class="sd-empty-tip">' + escapeHtml(emptyText) + '</div>';
+    } else {
+        html += '<div class="crew-header-info">' + escapeHtml(stationName) + '当前乘组: <strong style="color:#5b8fff;">' + list.length + '</strong> 名宇航员</div>';
         html += '<div class="crew-list">';
-        for (var i = 0; i < issList.length; i++) {
-            var c = issList[i];
+        list.forEach(function(c) {
             html += '<div class="crew-card">';
             html += '<div class="crew-avatar">' + c.flag + '</div>';
             html += '<div class="crew-info">';
             html += '<div class="crew-name">' + escapeHtml(c.name) + '</div>';
-            html += '<div class="crew-craft">ISS (' + escapeHtml(c.agency) + ')' + (c.role ? ' · ' + escapeHtml(c.role) : '') + '</div>';
+            html += '<div class="crew-craft">' + escapeHtml(stationName) + '(' + escapeHtml(c.agency) + ')' + (c.role ? ' · ' + escapeHtml(c.role) : '') + '</div>';
             html += '</div></div>';
-        }
+        });
         html += '</div>';
-        if (tgList.length > 0) {
-            html += '<div class="crew-header-info" style="margin-top:16px;">🇨🇳 天宫空间站乘组: <strong style="color:#5b8fff;">' + tgList.length + '</strong> 名宇航员</div>';
-            html += '<div class="crew-list">';
-            for (var j = 0; j < tgList.length; j++) {
-                var t = tgList[j];
-                html += '<div class="crew-card">';
-                html += '<div class="crew-avatar">' + t.flag + '</div>';
-                html += '<div class="crew-info">';
-                html += '<div class="crew-name">' + escapeHtml(t.name) + '</div>';
-                html += '<div class="crew-craft">天宫空间站 (' + escapeHtml(t.agency) + ')' + (t.role ? ' · ' + escapeHtml(t.role) : '') + '</div>';
-                html += '</div></div>';
-            }
-            html += '</div>';
-        }
-        html += '<div style="text-align:center;margin-top:12px;font-size:0.75rem;color:#667788;">数据来源: howmanypeopleareinspacerightnow.com · 每 6 小时同步</div>';
-        panel.innerHTML = html;
     }
+    html += '<div style="text-align:center;margin-top:12px;font-size:0.75rem;color:#667788;">数据来源: howmanypeopleareinspacerightnow.com · 每 6 小时同步</div>';
+    panel.innerHTML = html;
+}
+
+// 天宫乘组：复用同一份同步数据，只展示天宫成员
+async function loadTiangongCrew() {
+    var panel = document.getElementById('tiangongPanel');
+    if (!panel) return;
+    if (!window._sdCrewData) {
+        panel.innerHTML = '<div style="text-align:center;padding:40px;color:#667788;">🧑‍🚀 加载天宫乘组信息...</div>';
+        await loadISSCrew();
+    }
+    var data = window._sdCrewData || { iss: [], tiangong: [] };
+    sdTouch('tiangong');
+    var emptyText = window._sdCrewFailed ? '乘组数据暂时无法获取，请稍后重试' : '当前天宫无人驻留';
+    sdRenderCrewGroup('tiangongPanel', data.tiangong, '天宫空间站 ', emptyText);
 }
 
 // ==================== 流星雨日历 ====================
@@ -1484,6 +1532,168 @@ function renderAurora(panel, obsJson, fcJson) {
     html += '<div class="sd-note">🇨🇳 中国大陆处于中低磁纬，常规情况下看不到极光。当 Kp ≥ 5 时，漠河、新疆阿勒泰等高磁纬地区有机会目视极光。极光实际可见性还取决于当地天气、光污染与极光椭圆区位置。</div>';
     sdTouch('aurora');
     panel.innerHTML = html;
+}
+
+// ==================== 🌍 地球此刻 (NASA EPIC) ====================
+var earthTimer = null;
+
+function stopEarthNow() {
+    if (earthTimer) { clearInterval(earthTimer); earthTimer = null; }
+}
+
+async function loadEarthNow() {
+    var panel = document.getElementById('earthPanel');
+    if (!panel) return;
+    stopEarthNow();
+    panel.innerHTML = '<div style="text-align:center;padding:40px;color:#667788;">🌍 正在获取 DSCOVR 拍摄的最新地球影像...</div>';
+    try {
+        // 官方文档入口优先；若 api.nasa.gov 网关异常则回退到 EPIC 官方接口
+        var endpoints = [
+            'https://api.nasa.gov/EPIC/api/natural/images?api_key=' + encodeURIComponent(NASA_API_KEY),
+            'https://epic.gsfc.nasa.gov/api/natural/images'
+        ];
+        var list = null, lastErr = null;
+        for (var ei = 0; ei < endpoints.length; ei++) {
+            try {
+                var resp = await fetch(endpoints[ei]);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                var json = await resp.json();
+                if (!Array.isArray(json) || !json.length) throw new Error('暂无可用影像');
+                list = json;
+                break;
+            } catch (e) { lastErr = e; }
+        }
+        if (!list) throw (lastErr || new Error('暂无可用影像'));
+        if (sdCurrentTab !== 'earth') return;
+
+        var item = list[list.length - 1];
+        var mt = String(item.date || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+        if (!mt) throw new Error('影像日期格式异常');
+        var y = mt[1], mo = mt[2], da = mt[3];
+        var shotUtc = new Date(Date.UTC(+y, +mo - 1, +da, +mt[4], +mt[5], +mt[6]));
+        var imgUrl = 'https://epic.gsfc.nasa.gov/archive/natural/' + y + '/' + mo + '/' + da + '/png/' + item.image + '.png';
+
+        var h = '<div class="sd-loc-row"><span>🌍 DSCOVR / EPIC · 最新一帧自然色影像</span><button onclick="loadEarthNow()">刷新</button></div>';
+        h += '<div class="earth-figure">';
+        h += '<img class="earth-img" src="' + imgUrl + '" alt="NASA EPIC 地球影像" loading="lazy" onerror="this.style.display=\'none\';var f=document.getElementById(\'earthImgFallback\');if(f){f.style.display=\'block\';}">';
+        h += '<div id="earthImgFallback" style="display:none;padding:36px 12px;text-align:center;color:#667788;">影像加载失败，可点击下方链接打开 NASA 原图</div>';
+        h += '</div>';
+
+        var cen = item.centroid_coordinates || (item.coords && item.coords.centroid_coordinates);
+        h += '<div class="sd-stat-row" style="grid-template-columns:repeat(' + (cen ? 2 : 1) + ',minmax(0,1fr));">';
+        h += '<div class="sd-stat-tile"><div class="t-icon">🕒</div><div class="t-val" style="font-size:0.8rem;">' + escapeHtml(shotUtc.toLocaleString('zh-CN', { hour12: false })) + '</div><div class="t-label">拍摄时间（本地时区）</div></div>';
+        if (cen && typeof cen.lat === 'number' && typeof cen.lon === 'number') {
+            h += '<div class="sd-stat-tile"><div class="t-icon">📍</div><div class="t-val" style="font-size:0.8rem;">' + cen.lat.toFixed(2) + '°, ' + cen.lon.toFixed(2) + '°</div><div class="t-label">影像质心经纬度</div></div>';
+        }
+        h += '</div>';
+        if (item.caption) h += '<div class="sd-note">' + escapeHtml(item.caption) + '</div>';
+        h += '<div style="text-align:center;margin-top:10px;font-size:0.72rem;"><a href="' + imgUrl + '" target="_blank" rel="noopener noreferrer" style="color:#5b8fff;">查看原图 ↗</a></div>';
+        panel.innerHTML = h;
+        sdTouch('earth');
+        earthTimer = setInterval(loadEarthNow, 30 * 60000);
+    } catch (e) {
+        if (sdCurrentTab !== 'earth') return;
+        panel.innerHTML = '<div style="text-align:center;padding:40px;color:#ff4060;">⚠️ ' + escapeHtml(e.message || '影像加载失败') +
+            '<br><button onclick="loadEarthNow()" style="margin-top:12px;padding:8px 20px;background:rgba(91,143,255,0.15);border:1px solid rgba(91,143,255,0.3);color:#5b8fff;border-radius:8px;cursor:pointer;">重试</button></div>';
+    }
+}
+
+// ==================== ☀️ 太阳实时 (NASA SDO) ====================
+var sunImageList = [
+    { url: 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg', band: '193Å', desc: '百万度日冕' },
+    { url: 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0304.jpg', band: '304Å', desc: '色球 / 过渡区' },
+    { url: 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0171.jpg', band: '171Å', desc: '宁静日冕' },
+    { url: 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_HMIB.jpg', band: 'HMIB', desc: '纵向磁图' }
+];
+var sdSunActivityCache = null;
+var sdSunActivityTime = 0;
+
+function loadSunPanel() {
+    var panel = document.getElementById('sunPanel');
+    if (!panel) return;
+    var h = '<div class="sd-img-grid">';
+    sunImageList.forEach(function(im) {
+        h += '<div class="sd-img-card">';
+        h += '<img src="' + im.url + '" alt="SDO ' + escapeHtml(im.band) + ' ' + escapeHtml(im.desc) + '" loading="lazy" onerror="this.closest(\'.sd-img-card\').style.display=\'none\'">';
+        h += '<div class="sd-img-cap"><strong>' + escapeHtml(im.band) + '</strong> · ' + escapeHtml(im.desc) + '</div>';
+        h += '</div>';
+    });
+    h += '</div>';
+    h += '<div id="sunActivity"></div>';
+    panel.innerHTML = h;
+    sdTouch('sun');
+    loadSunActivity();
+}
+
+async function sdGetSunActivity() {
+    if (sdSunActivityCache && Date.now() - sdSunActivityTime < 30 * 60000) return sdSunActivityCache;
+    var swGet = function(url) {
+        return fetch(url).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
+    };
+    // 若「空间天气」面板刚加载过，直接复用其已取得的耀斑数据，避免重复请求
+    var cachedFlare = window._sdAuroraFlare && window._sdAuroraTime && (Date.now() - window._sdAuroraTime < 30 * 60000)
+        ? window._sdAuroraFlare : null;
+    var res = await Promise.all([
+        cachedFlare ? Promise.resolve(null) : swGet('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json'),
+        swGet('https://services.swpc.noaa.gov/json/solar-cycle/observed-solar-cycle-indices.json')
+    ]);
+    var flares = cachedFlare || res[0];
+    var flare = (Array.isArray(flares) && flares.length) ? flares[flares.length - 1] : null;
+    var ssn = null, ssnMonth = '';
+    if (Array.isArray(res[1])) {
+        for (var i = res[1].length - 1; i >= 0; i--) {
+            var row = res[1][i];
+            var v = row ? row.ssn : null;
+            if (typeof v === 'number' && v >= 0) { ssn = v; ssnMonth = row['time-tag'] || ''; break; }
+        }
+    }
+    sdSunActivityCache = { flare: flare, ssn: ssn, ssnMonth: ssnMonth };
+    sdSunActivityTime = Date.now();
+    return sdSunActivityCache;
+}
+
+async function loadSunActivity() {
+    var box = document.getElementById('sunActivity');
+    if (!box) return;
+    var act = await sdGetSunActivity();
+    if (!document.getElementById('sunActivity')) return;
+    var tiles = '';
+    if (act.flare) {
+        var fcls = act.flare.max_class || act.flare.current_class || '';
+        if (fcls) {
+            var ftime = act.flare.max_time || act.flare.time_tag ? sdFmtTime(sdParseUTC(act.flare.max_time || act.flare.time_tag)) : '';
+            tiles += '<div class="sd-stat-tile"><div class="t-icon">💥</div><div class="t-val" style="color:' + sdFlareColor(fcls) + ';">' + escapeHtml(fcls) + '</div><div class="t-label">最新耀斑峰值' + (ftime ? ' · ' + ftime : '') + '</div></div>';
+        }
+    }
+    if (typeof act.ssn === 'number') {
+        tiles += '<div class="sd-stat-tile"><div class="t-icon">🌞</div><div class="t-val">' + Math.round(act.ssn) + '</div><div class="t-label">黑子相对数（' + escapeHtml(act.ssnMonth) + ' 月均）</div></div>';
+    }
+    if (!tiles) { box.innerHTML = ''; return; }
+    box.innerHTML = '<div class="sd-section-title">☀️ 当前太阳活动</div><div class="sd-stat-row" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">' + tiles + '</div>';
+}
+
+// ==================== 🛰️ 在轨物体（静态统计） ====================
+function renderOrbitalPanel() {
+    var panel = document.getElementById('orbitalPanel');
+    if (!panel) return;
+    var d = SD_ORBITAL_STATS;
+    var h = '<div class="sd-stat-row">';
+    d.items.forEach(function(it) {
+        h += '<div class="sd-stat-tile"><div class="t-icon">' + it.icon + '</div>' +
+            '<div class="t-val">' + escapeHtml(it.value) + '</div>' +
+            '<div class="t-label">' + escapeHtml(it.label) + '</div>' +
+            '<div style="font-size:0.6rem;color:#556677;margin-top:3px;">' + escapeHtml(it.note) + '</div></div>';
+    });
+    h += '</div>';
+    h += '<div class="sd-section-title">📡 主要星座规模</div>';
+    d.constellations.forEach(function(c) {
+        h += '<div class="sd-dso-row">' +
+            '<div class="d-emoji">🛰️</div>' +
+            '<div style="flex:1;min-width:0;"><div class="d-name">' + escapeHtml(c.name) + '</div><div class="d-sub">' + escapeHtml(c.note) + '</div></div>' +
+            '<div class="d-tip" style="color:#5b8fff;font-weight:700;">' + escapeHtml(c.count) + '</div></div>';
+    });
+    h += '<div class="sd-note">📌 ' + escapeHtml(d.note) + '</div>';
+    panel.innerHTML = h;
 }
 
 // ==================== 🛰️ 卫星编队追踪 ====================

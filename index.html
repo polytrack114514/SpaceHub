@@ -4132,7 +4132,7 @@ hr, .divider {
         .sd-trust-time { margin-left: auto; color: #556677; white-space: nowrap; }
 
         /* --- Tonight's Sky / ISS Pass / Aurora panels --- */
-        .tonight-panel, .ispass-panel, .aurora-panel, .fleet-panel { padding: 4px 2px; }
+        .tonight-panel, .ispass-panel, .aurora-panel, .fleet-panel, .earth-panel, .sun-panel, .orbital-panel { padding: 4px 2px; }
         .sd-loc-row {
             display: flex; align-items: center; justify-content: space-between; gap: 8px;
             font-size: 0.75rem; color: #667788; margin-bottom: 10px;
@@ -4219,6 +4219,22 @@ hr, .divider {
             border: 1px solid rgba(91, 143, 255, 0.1); border-radius: 8px; padding: 8px 12px; margin-top: 10px; line-height: 1.5;
         }
         .sd-empty-tip { text-align: center; padding: 24px 12px; color: #667788; font-size: 0.82rem; }
+        .earth-figure { margin-bottom: 10px; }
+        .earth-img {
+            display: block; width: 100%; border-radius: 12px;
+            border: 1px solid rgba(91, 143, 255, 0.18); background: #050810;
+        }
+        .sd-img-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .sd-img-card {
+            background: rgba(91, 143, 255, 0.04); border: 1px solid rgba(91, 143, 255, 0.12);
+            border-radius: 10px; padding: 6px;
+        }
+        .sd-img-card img {
+            display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+            border-radius: 7px; background: #050810;
+        }
+        .sd-img-cap { font-size: 0.68rem; color: #8899aa; text-align: center; margin-top: 6px; line-height: 1.4; }
+        .sd-img-cap strong { color: #5b8fff; }
         .sd-cloud-verdict {
             display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px;
             background: rgba(91, 143, 255, 0.06); border: 1px solid rgba(91, 143, 255, 0.15);
@@ -5107,13 +5123,17 @@ if (typeof supabase === 'undefined') {
                 <button class="sd-tab" onclick="switchSDTab('moon', this)">月相</button>
                 <button class="sd-tab" onclick="switchSDTab('asteroids', this)">近地小行星</button>
                 <button class="sd-tab" onclick="switchSDTab('crew', this)">ISS乘组</button>
+                <button class="sd-tab" onclick="switchSDTab('tiangong', this)">🧑‍🚀 天宫乘组</button>
                 <button class="sd-tab" onclick="switchSDTab('meteors', this)">流星雨</button>
                 <button class="sd-tab" onclick="switchSDTab('eclipses', this)">日食月食</button>
                 <button class="sd-tab" onclick="switchSDTab('launches', this)">🚀 发射任务</button>
                 <button class="sd-tab" onclick="switchSDTab('tonight', this)">🌃 今夜星空</button>
                 <button class="sd-tab" onclick="switchSDTab('isspass', this)">⏰ ISS过境</button>
                 <button class="sd-tab" onclick="switchSDTab('aurora', this)">☀️ 空间天气</button>
+                <button class="sd-tab" onclick="switchSDTab('earth', this)">🌍 地球此刻</button>
+                <button class="sd-tab" onclick="switchSDTab('sun', this)">☀️ 太阳实时</button>
                 <button class="sd-tab" onclick="switchSDTab('fleet', this)">🛰️ 卫星编队</button>
+                <button class="sd-tab" onclick="switchSDTab('orbital', this)">🛰️ 在轨物体</button>
                 <button class="sd-tab" onclick="switchSDTab('sentry', this)">💥 撞击风险</button>
             </div>
             <div class="space-data-body space-data-body-inline">
@@ -5149,6 +5169,11 @@ if (typeof supabase === 'undefined') {
                     <div class="crew-panel" id="crewPanel">点击加载ISS乘组信息...</div>
                 </div>
 
+                <div class="sd-panel" id="sdPanel-tiangong">
+                    <div class="sd-trust" id="sdTrust-tiangong"></div>
+                    <div class="crew-panel" id="tiangongPanel">点击加载天宫乘组信息...</div>
+                </div>
+
                 <div class="sd-panel" id="sdPanel-meteors">
                     <div class="sd-trust" id="sdTrust-meteors"></div>
                     <div class="meteor-panel" id="meteorPanel">点击查看流星雨日历...</div>
@@ -5174,9 +5199,21 @@ if (typeof supabase === 'undefined') {
                     <div class="sd-trust" id="sdTrust-aurora"></div>
                     <div class="aurora-panel" id="auroraPanel">点击加载空间天气...</div>
                 </div>
+                <div class="sd-panel" id="sdPanel-earth">
+                    <div class="sd-trust" id="sdTrust-earth"></div>
+                    <div class="earth-panel" id="earthPanel">点击加载地球此刻影像...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-sun">
+                    <div class="sd-trust" id="sdTrust-sun"></div>
+                    <div class="sun-panel" id="sunPanel">点击加载太阳实时影像...</div>
+                </div>
                 <div class="sd-panel" id="sdPanel-fleet">
                     <div class="sd-trust" id="sdTrust-fleet"></div>
                     <div class="fleet-panel" id="fleetPanel">点击加载卫星编队追踪...</div>
+                </div>
+                <div class="sd-panel" id="sdPanel-orbital">
+                    <div class="sd-trust" id="sdTrust-orbital"></div>
+                    <div class="orbital-panel" id="orbitalPanel">点击查看在轨物体统计...</div>
                 </div>
                 <div class="sd-panel" id="sdPanel-sentry">
                     <div class="sd-trust" id="sdTrust-sentry"></div>
@@ -5199,7 +5236,7 @@ if (typeof supabase === 'undefined') {
                 <button class="embed-tab" onclick="switchEmbedTab('interactive', this)">🎮 官方互动页面入口</button>
             </div>
             <div class="embed-panel active" id="embedPanel-agencies">
-                <div class="official-panel-note">共 9 个官方机构入口，点击卡片在新标签页打开</div>
+                <div class="official-panel-note">共 16 个官方机构入口，点击卡片在新标签页打开</div>
                 <div class="official-link-grid">
                     <a class="official-link-card" href="https://www.nasa.gov/" target="_blank" rel="noopener noreferrer">
                         <span class="olc-icon">🚀</span>
@@ -5246,11 +5283,46 @@ if (typeof supabase === 'undefined') {
                         <span class="olc-body"><strong>Blue Origin</strong><small>蓝色起源 · 新格伦火箭</small></span>
                         <span class="olc-arrow">↗</span>
                     </a>
+                    <a class="official-link-card" href="https://www.roscosmos.ru/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇷🇺</span>
+                        <span class="olc-body"><strong>Roscosmos</strong><small>俄罗斯国家航天集团</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.asc-csa.gc.ca/eng/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇨🇦</span>
+                        <span class="olc-body"><strong>CSA</strong><small>加拿大航天局</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.dlr.de/en" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇩🇪</span>
+                        <span class="olc-body"><strong>DLR</strong><small>德国航空航天中心</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://cnes.fr/en" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇫🇷</span>
+                        <span class="olc-body"><strong>CNES</strong><small>法国国家空间研究中心</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.kari.re.kr/eng/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🇰🇷</span>
+                        <span class="olc-body"><strong>KARI</strong><small>韩国航空宇宙研究院</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.spacechina.com/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🛰️</span>
+                        <span class="olc-body"><strong>CASC</strong><small>中国航天科技集团</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://www.casic.com.cn/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🛰️</span>
+                        <span class="olc-body"><strong>CASIC</strong><small>中国航天科工集团</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
                 </div>
             </div>
 
             <div class="embed-panel" id="embedPanel-interactive">
-                <div class="official-panel-note">共 4 个官方互动入口，点击卡片在新标签页打开</div>
+                <div class="official-panel-note">共 11 个官方互动入口，点击卡片在新标签页打开</div>
                 <div class="official-link-grid">
                     <a class="official-link-card" href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">
                         <span class="olc-icon">🪐</span>
@@ -5270,6 +5342,41 @@ if (typeof supabase === 'undefined') {
                     <a class="official-link-card" href="https://eyes.nasa.gov/dsn/dsn.html" target="_blank" rel="noopener noreferrer">
                         <span class="olc-icon">📡</span>
                         <span class="olc-body"><strong>DSN Now</strong><small>深空网络实时通信状态</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://images.nasa.gov/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🖼️</span>
+                        <span class="olc-body"><strong>NASA Image Library</strong><small>全库公开影像检索</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://aladin.cds.unistra.fr/AladinLite/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🔭</span>
+                        <span class="olc-body"><strong>Aladin Lite</strong><small>专业交互星图</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://eyes.nasa.gov/apps/exo/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🪐</span>
+                        <span class="olc-body"><strong>NASA Eyes on Exoplanets</strong><small>系外行星可视化</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://plus.nasa.gov/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">📺</span>
+                        <span class="olc-body"><strong>NASA+</strong><small>官方直播</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://watch.esa.int/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">📡</span>
+                        <span class="olc-body"><strong>ESA Web TV</strong><small>欧空局直播</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://stars.chromeexperiments.com/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">🌌</span>
+                        <span class="olc-body"><strong>100,000 Stars</strong><small>银河系恒星可视化</small></span>
+                        <span class="olc-arrow">↗</span>
+                    </a>
+                    <a class="official-link-card" href="https://spotthestation.nasa.gov/" target="_blank" rel="noopener noreferrer">
+                        <span class="olc-icon">⏰</span>
+                        <span class="olc-body"><strong>Spot the Station</strong><small>ISS 过境提醒</small></span>
                         <span class="olc-arrow">↗</span>
                     </a>
                 </div>
@@ -5438,7 +5545,7 @@ if (typeof supabase === 'undefined') {
 <script src="js/admin.js?v=20261108b"></script>
 <script src="js/ai.js?v=20261108b"></script>
 <script src="js/apod.js?v=20261108b"></script>
-<script src="js/spacedata.js?v=20261108b"></script>
+<script src="js/spacedata.js?v=20261108c"></script>
 <script>
 // 全局错误处理：即使 Supabase 失败也要隐藏加载动画
 window.addEventListener('error', function(e) {
