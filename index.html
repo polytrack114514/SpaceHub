@@ -2883,15 +2883,23 @@ hr, .divider {
 }
 .official-embed-head h3 { margin: 0; font-size: 1.05rem; color: #ccdde8; letter-spacing: 0.5px; }
 .official-embed-head p { margin: 4px 0 0; font-size: 0.74rem; color: #667788; }
-.official-link-section { margin-bottom: 22px; }
-.official-section-head {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    padding: 9px 14px; margin-bottom: 12px; border-radius: 10px;
-    font-size: 0.86rem; font-weight: 700; color: #8fc2ff; letter-spacing: 0.5px;
-    background: rgba(91, 143, 255, 0.1);
-    border: 1px solid rgba(91, 143, 255, 0.22);
+.official-embed-tabs {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 8px 10px; margin-bottom: 14px; border-radius: 12px;
+    background: rgba(10, 14, 26, 0.6);
+    border: 1px solid rgba(91, 143, 255, 0.16);
 }
-.official-section-count { font-size: 0.7rem; font-weight: 400; color: #667788; }
+.embed-tab {
+    padding: 8px 18px; border: none; border-radius: 8px;
+    background: transparent; color: #8899aa; cursor: pointer;
+    font-size: 0.85rem; font-family: inherit;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.embed-tab:hover { background: rgba(91, 143, 255, 0.08); color: #5b8fff; }
+.embed-tab.active { background: rgba(91, 143, 255, 0.15); color: #5b8fff; box-shadow: 0 0 12px rgba(91, 143, 255, 0.15); }
+.embed-panel { display: none; }
+.embed-panel.active { display: block; animation: fadeIn 0.2s ease; }
+.official-panel-note { margin: 0 0 12px; font-size: 0.72rem; color: #667788; }
 .official-link-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .official-link-card {
     display: flex; align-items: center; gap: 10px;
@@ -2918,7 +2926,7 @@ hr, .divider {
 .olc-arrow { flex-shrink: 0; color: #5b8fff; font-size: 0.9rem; }
 @media (max-width: 640px) {
     .official-link-grid { grid-template-columns: 1fr; }
-    .official-section-head { font-size: 0.8rem; }
+    .embed-tab { font-size: 0.8rem; padding: 7px 12px; }
 }
 
 
@@ -5176,11 +5184,12 @@ if (typeof supabase === 'undefined') {
                 </div>
             </div>
 
-            <section class="official-link-section">
-                <div class="official-section-head">
-                    <span>🏛️ 官方机构</span>
-                    <span class="official-section-count">9 个入口</span>
-                </div>
+            <div class="official-embed-tabs">
+                <button class="embed-tab active" onclick="switchEmbedTab('agencies', this)">🏛️ 官方机构</button>
+                <button class="embed-tab" onclick="switchEmbedTab('interactive', this)">🎮 官方互动页面入口</button>
+            </div>
+            <div class="embed-panel active" id="embedPanel-agencies">
+                <div class="official-panel-note">共 9 个官方机构入口，点击卡片在新标签页打开</div>
                 <div class="official-link-grid">
                     <a class="official-link-card" href="https://www.nasa.gov/" target="_blank" rel="noopener noreferrer">
                         <span class="olc-icon">🚀</span>
@@ -5228,13 +5237,10 @@ if (typeof supabase === 'undefined') {
                         <span class="olc-arrow">↗</span>
                     </a>
                 </div>
-            </section>
+            </div>
 
-            <section class="official-link-section">
-                <div class="official-section-head">
-                    <span>🎮 官方互动页面入口</span>
-                    <span class="official-section-count">4 个入口</span>
-                </div>
+            <div class="embed-panel" id="embedPanel-interactive">
+                <div class="official-panel-note">共 4 个官方互动入口，点击卡片在新标签页打开</div>
                 <div class="official-link-grid">
                     <a class="official-link-card" href="https://eyes.nasa.gov/apps/solar-system/#/home" target="_blank" rel="noopener noreferrer">
                         <span class="olc-icon">🪐</span>
@@ -5257,7 +5263,7 @@ if (typeof supabase === 'undefined') {
                         <span class="olc-arrow">↗</span>
                     </a>
                 </div>
-            </section>
+            </div>
         </div>
     </div>
     <!-- 发帖弹窗 -->

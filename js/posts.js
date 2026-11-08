@@ -358,6 +358,15 @@ window.handleSearch = function(val) {
     searchTimer = setTimeout(function() { displayCount = 20; renderPosts(); }, 300);
 };
 
+// 官方网页跳转：子面板切换
+window.switchEmbedTab = function(key, btn) {
+    document.querySelectorAll('.embed-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.embed-panel').forEach(function(p) { p.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    var panel = document.getElementById('embedPanel-' + key);
+    if (panel) panel.classList.add('active');
+};
+
 window.clearSearch = function() {
     var input = document.getElementById('searchInput');
     if (input) input.value = '';
