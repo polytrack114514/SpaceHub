@@ -88,9 +88,20 @@ async function tavilyRequest(url, query, isProxy, opts) {
 
 function formatWebContext(found) {
     if (!found) return '';
-    var lines = ['【联网检索 · 实时网页结果】（这些内容晚于你的知识截止 2026年7月，必须优先采用）'];
-    if (found.answer) lines.push('检索结论：' + found.answer);
     var results = found.results || [];
+    // 判断检索结果是否过期：全部早于 60 天则提示模型，避免把旧闻当最新
+    var newest = 0;
+    for (var d = 0; d < results.length; d++) {
+        var ts = Date.parse(results[d].published_date || '');
+        if (ts > newest) newest = ts;
+    }
+    var stale = newest > 0 && (Date.now() - newest) > 60 * 24 * 3600 * 1000;
+
+    var lines = ['【联网检索 · 实时网页结果】（这些内容晚于你的知识截止 2026年7月）'];
+    if (stale) {
+        lines.push('注意：本次检索到的网页均早于 60 天前，可能不是最新进展。若【站内知识库】有更新的排期，以站内数据为准，并说明“检索结果可能滞后”。');
+    }
+    if (found.answer) lines.push('检索结论：' + found.answer);
     for (var i = 0; i < results.length; i++) {
         var r = results[i];
         lines.push((i + 1) + '. ' + (r.title || '无标题') + (r.published_date ? '（' + String(r.published_date).slice(0, 16) + '）' : ''));
@@ -137,6 +148,15 @@ function formatLaunchLine(l) {
     return line;
 }
 
+var QUERY_ALIASES = {
+    '星舰': 'starship',
+    '猎鹰重型': 'falcon heavy',
+    '猎鹰': 'falcon',
+    '星链': 'starlink',
+    '龙飞船': 'dragon',
+    '阿尔忒弥斯': 'artemis'
+};
+
 async function buildSiteContext(question) {
     var list = (typeof launches !== 'undefined' && Array.isArray(launches)) ? launches.slice() : [];
     if (!list.length) {
@@ -148,6 +168,10 @@ async function buildSiteContext(question) {
     if (!list.length) return '';
 
     var q = String(question || '').toLowerCase();
+    // 中文别名补全：库里存的是 "Starship"，用户常问"星舰"
+    for (var alias in QUERY_ALIASES) {
+        if (q.indexOf(alias) !== -1) q += ' ' + QUERY_ALIASES[alias];
+    }
     var scored = [];
     for (var i = 0; i < list.length; i++) {
         var toks = launchTokens(list[i]);
