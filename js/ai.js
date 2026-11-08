@@ -53,25 +53,32 @@ async function tavilyRequest(url, query, isProxy, opts) {
     var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 15000) : null;
     try {
         var headers = { 'Content-Type': 'application/json' };
-        var body;
+        var payload = {
+            query: query,
+            max_results: 4,
+            topic: opts.topic,
+            days: opts.days,
+            include_answer: true,
+            include_raw_content: false
+        };
         if (isProxy) {
             headers['apikey'] = aiApiKey;
             headers['Authorization'] = 'Bearer ' + aiApiKey;
-            body = JSON.stringify({ query: query, max_results: 3, topic: opts.topic, days: opts.days });
+            delete payload.include_answer; // 由代理统一添加
         } else {
             headers['X-Tavily-Access-Mode'] = 'keyless';
-            body = JSON.stringify({ query: query, max_results: 3, topic: opts.topic, days: opts.days, include_answer: false });
         }
         var resp = await fetch(url, {
             method: 'POST',
             headers: headers,
-            body: body,
+            body: JSON.stringify(payload),
             signal: ctrl ? ctrl.signal : undefined
         });
         if (!resp.ok) return null;
         var data = await resp.json();
-        if (!data || !data.results || !data.results.length) return null;
-        return data.results;
+        if (!data) return null;
+        if ((!data.results || !data.results.length) && !data.answer) return null;
+        return { answer: data.answer || '', results: data.results || [] };
     } catch (e) {
         return null; // 检索不可用时静默退回站内知识库
     } finally {
@@ -79,9 +86,11 @@ async function tavilyRequest(url, query, isProxy, opts) {
     }
 }
 
-function formatWebContext(results) {
-    if (!results || !results.length) return '';
-    var lines = ['【联网检索 · 实时网页结果】（这些内容晚于你的知识截止，可据此回答）'];
+function formatWebContext(found) {
+    if (!found) return '';
+    var lines = ['【联网检索 · 实时网页结果】（这些内容晚于你的知识截止 2026年7月，必须优先采用）'];
+    if (found.answer) lines.push('检索结论：' + found.answer);
+    var results = found.results || [];
     for (var i = 0; i < results.length; i++) {
         var r = results[i];
         lines.push((i + 1) + '. ' + (r.title || '无标题') + (r.published_date ? '（' + String(r.published_date).slice(0, 16) + '）' : ''));

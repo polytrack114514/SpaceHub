@@ -66,7 +66,7 @@ Deno.serve(async (req: Request) => {
         search_depth: 'basic',
         topic,
         days,
-        include_answer: false,
+        include_answer: true,
         include_raw_content: false,
       }),
     })
@@ -84,7 +84,7 @@ Deno.serve(async (req: Request) => {
       content: String(r.content || '').slice(0, 400),
     }))
 
-    return jsonResponse({ query, keyless: !apiKey, results })
+    return jsonResponse({ query, keyless: !apiKey, answer: data.answer || '', results })
   } catch (e) {
     return jsonResponse({ error: '检索请求失败：' + (e as Error).message }, 502)
   }
